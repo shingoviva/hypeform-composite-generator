@@ -5,6 +5,7 @@ import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
 export default defineConfig({
+  base: '/hypeform-composite-generator/',
   plugins: [react(), tailwindcss(), viteSingleFile()],
   resolve: {
     alias: {
