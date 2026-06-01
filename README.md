@@ -33,6 +33,10 @@ npm run dev
 
 The app runs at [http://localhost:3000](http://localhost:3000).
 
+GitHub Pages deployment target:
+
+- `https://shingoviva.github.io/hypeform-composite-generator/`
+
 ## Optional Password Gate
 
 By default, the app opens directly into the editor.
