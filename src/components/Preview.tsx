@@ -11,6 +11,11 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const [scale, setScale] = useState(1);
   const A4_WIDTH = 1123;
   const A4_HEIGHT = 794;
+  const WATERMARK_BOX_WIDTH = 190;
+  const WATERMARK_BOX_HEIGHT = 56;
+  const WATERMARK_MIN_HEIGHT = 24;
+  const WATERMARK_MIN_TEXT_SIZE = 20;
+  const WATERMARK_MAX_TEXT_SIZE = 38;
 
   useEffect(() => {
     const updateScale = () => {
@@ -42,6 +47,11 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   }, []);
 
   const { profile, images } = state;
+  const watermarkSize = state.watermark.size ?? 100;
+  const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
+  const watermarkRatio = (watermarkScale - 40) / 100;
+  const watermarkHeight = WATERMARK_MIN_HEIGHT + watermarkRatio * (WATERMARK_BOX_HEIGHT - WATERMARK_MIN_HEIGHT);
+  const watermarkTextSize = WATERMARK_MIN_TEXT_SIZE + watermarkRatio * (WATERMARK_MAX_TEXT_SIZE - WATERMARK_MIN_TEXT_SIZE);
 
   const MainImagePlaceholder = () => (
     <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 font-sans text-sm">
@@ -308,15 +318,21 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
           {state.watermark.enabled && (
             <div 
-              className="absolute bottom-6 right-6 pointer-events-none z-50 flex items-end justify-end"
+              className={`absolute bottom-6 right-6 pointer-events-none z-50 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
               style={{
                 opacity: state.watermark.opacity / 100,
+                width: state.watermark.type === 'image' ? WATERMARK_BOX_WIDTH : undefined,
+                height: state.watermark.type === 'image' ? WATERMARK_BOX_HEIGHT : undefined,
               }}
             >
               {state.watermark.type === 'text' && state.watermark.text && (
                 <div 
-                  style={{ fontFamily: state.watermark.font }}
-                  className="text-2xl font-bold tracking-widest text-black"
+                  style={{ 
+                    fontFamily: state.watermark.font,
+                    fontSize: `${watermarkTextSize}px`,
+                    lineHeight: 1,
+                  }}
+                  className="font-bold tracking-widest text-black text-right"
                 >
                   {state.watermark.text}
                 </div>
@@ -325,7 +341,12 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 <img 
                   src={state.watermark.imageUrl} 
                   alt="Agency Logo" 
-                  className="h-16 w-auto object-contain"
+                  className="block w-auto object-contain object-right-bottom"
+                  style={{
+                    height: watermarkHeight,
+                    maxWidth: WATERMARK_BOX_WIDTH,
+                    maxHeight: WATERMARK_BOX_HEIGHT,
+                  }}
                 />
               )}
             </div>
