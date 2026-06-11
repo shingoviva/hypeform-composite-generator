@@ -43,6 +43,7 @@ const t = {
     watermarkText: 'Text',
     watermarkImage: 'Image',
     watermarkOpacity: 'Opacity',
+    watermarkSize: 'Size',
     watermarkEnabled: 'Enable Overlay',
   },
   ja: {
@@ -78,6 +79,7 @@ const t = {
     watermarkText: 'テキスト',
     watermarkImage: '画像',
     watermarkOpacity: '不透明度',
+    watermarkSize: 'サイズ',
     watermarkEnabled: 'ウォーターマークを有効にする',
   }
 };
@@ -126,7 +128,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
       ...prev,
       watermark: {
         ...prev.watermark,
-        [name]: name === 'opacity' ? parseInt(value) : value
+        [name]: name === 'opacity' || name === 'size' ? parseInt(value) : value
       }
     }));
   };
@@ -150,7 +152,8 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
         ...prev,
         watermark: {
           ...prev.watermark,
-          imageUrl: url
+          imageUrl: url,
+          size: prev.watermark.size || 100,
         }
       }));
     }
@@ -447,7 +450,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   />
                   {state.watermark.imageUrl ? (
                     <div className="relative inline-block">
-                      <img src={state.watermark.imageUrl} className="h-12 object-contain" />
+                      <img src={state.watermark.imageUrl} className="h-12 max-w-40 object-contain" />
                       <button onClick={handleRemoveWatermarkImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
                     </div>
                   ) : (
@@ -458,8 +461,24 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                       + {lang.watermarkImage}
                     </button>
                   )}
+
                 </div>
               )}
+
+              <div>
+                <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-2">
+                  <span>{lang.watermarkSize} ({state.watermark.size ?? 100}%)</span>
+                </label>
+                <input
+                  type="range"
+                  name="size"
+                  min="40"
+                  max="140"
+                  value={state.watermark.size ?? 100}
+                  onChange={handleWatermarkChange}
+                  className="w-full accent-black"
+                />
+              </div>
 
               <div>
                 <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-2">
