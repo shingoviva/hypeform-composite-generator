@@ -42,6 +42,7 @@ export interface WatermarkData {
   font: string;
   imageUrl: string | null;
   opacity: number;
+  size?: number;
 }
 
 export interface AppState {
