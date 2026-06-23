@@ -1,6 +1,8 @@
 import React, { ChangeEvent } from 'react';
 import { AppState, ProfileData } from '../types';
 import { UiLanguage } from '../App';
+import { getImageFilter } from '../imageAdjustments';
+import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 
 interface FormProps {
   state: AppState;
@@ -310,6 +312,14 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
 
         {/* Photos Section */}
         <section>
+          {Object.values(state.images).map((image) => (
+            <ImageAdjustmentFilter
+              key={`form-filter-${image.id}`}
+              id={`form-image-adjustment-${image.id}`}
+              exposure={image.exposure}
+              vibrance={image.vibrance}
+            />
+          ))}
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#a1a1aa] mb-4">
             {lang.photos}
           </h2>
@@ -323,9 +333,9 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
               >
                 {state.images.main.croppedUrl ? (
                   state.images.main.fitMode === 'contain' ? (
-                    <img src={state.images.main.originalUrl || state.images.main.croppedUrl} className="w-full h-full object-contain bg-white" />
+                    <img src={state.images.main.originalUrl || state.images.main.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('form-image-adjustment-main') }} />
                   ) : (
-                    <img src={state.images.main.croppedUrl} className="w-full h-full object-cover" />
+                    <img src={state.images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('form-image-adjustment-main') }} />
                   )
                 ) : (
                   <span className="text-xs text-gray-400">+</span>
@@ -356,9 +366,9 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                       >
                         {image.croppedUrl ? (
                           image.fitMode === 'contain' ? (
-                            <img src={image.originalUrl || image.croppedUrl} className="w-full h-full object-contain bg-white" />
+                            <img src={image.originalUrl || image.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`) }} />
                           ) : (
-                            <img src={image.croppedUrl} className="w-full h-full object-cover" />
+                            <img src={image.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`) }} />
                           )
                         ) : (
                           <span className="text-xs text-gray-400">+</span>
