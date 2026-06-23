@@ -2,6 +2,12 @@ import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { Point, Area } from 'react-easy-crop';
 import { UiLanguage } from '../App';
+import {
+  DEFAULT_EXPOSURE,
+  DEFAULT_VIBRANCE,
+  getImageFilter
+} from '../imageAdjustments';
+import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 
 // Helper to extract image
 const createImage = (url: string): Promise<HTMLImageElement> =>
@@ -107,8 +113,15 @@ interface ImageCropperModalProps {
   imageUrl: string;
   aspectRatio: number;
   initialFitMode?: 'cover' | 'contain';
+  initialExposure?: number;
+  initialVibrance?: number;
   onClose: () => void;
-  onCropComplete: (croppedUrl: string, fitMode: 'cover' | 'contain') => void;
+  onCropComplete: (
+    croppedUrl: string,
+    fitMode: 'cover' | 'contain',
+    exposure: number,
+    vibrance: number
+  ) => void;
   onChangeImage: () => void;
   uiLanguage: UiLanguage;
 }
@@ -117,6 +130,9 @@ const t = {
   en: {
     cropImage: 'Crop Image',
     zoom: 'Zoom',
+    exposure: 'Exposure',
+    vibrance: 'Vibrance',
+    resetAdjustments: 'Reset adjustments',
     fitToFrame: 'Fit entire image (Show borders)',
     changeImage: 'Change Image',
     cancel: 'Cancel',
@@ -125,6 +141,9 @@ const t = {
   ja: {
     cropImage: '画像のトリミング',
     zoom: 'ズーム',
+    exposure: '露出',
+    vibrance: '自然な彩度',
+    resetAdjustments: '調整をリセット',
     fitToFrame: '全体を収める（余白あり）',
     changeImage: '画像を変更',
     cancel: 'キャンセル',
@@ -132,12 +151,27 @@ const t = {
   }
 };
 
-export default function ImageCropperModal({ isOpen, imageUrl, aspectRatio, initialFitMode = 'cover', onClose, onCropComplete, onChangeImage, uiLanguage }: ImageCropperModalProps) {
+export default function ImageCropperModal({
+  isOpen,
+  imageUrl,
+  aspectRatio,
+  initialFitMode = 'cover',
+  initialExposure = DEFAULT_EXPOSURE,
+  initialVibrance = DEFAULT_VIBRANCE,
+  onClose,
+  onCropComplete,
+  onChangeImage,
+  uiLanguage
+}: ImageCropperModalProps) {
   const lang = t[uiLanguage];
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [fitMode, setFitMode] = useState<'cover' | 'contain'>(initialFitMode);
+  const [exposure, setExposure] = useState(initialExposure);
+  const [vibrance, setVibrance] = useState(initialVibrance);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const imageFilterId = 'cropper-image-adjustment';
+  const imageFilter = getImageFilter(imageFilterId);
 
   const handleCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -151,7 +185,7 @@ export default function ImageCropperModal({ isOpen, imageUrl, aspectRatio, initi
         // Fallback for croppedAreaPixels to make TypeScript happy if it happens to be null in contain mode
         const area = croppedAreaPixels || { x: 0, y: 0, width: 0, height: 0 };
         const croppedImage = await getCroppedImg(imageUrl, area, fitMode, aspectRatio);
-        onCropComplete(croppedImage, fitMode);
+        onCropComplete(croppedImage, fitMode, exposure, vibrance);
       } catch (e) {
         console.error(e);
       }
@@ -161,15 +195,20 @@ export default function ImageCropperModal({ isOpen, imageUrl, aspectRatio, initi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[95dvh] overflow-hidden shadow-2xl flex flex-col">
-        <div className="p-4 border-b border-neutral-200 flex justify-between items-center shrink-0">
+    <div className="cropper-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="cropper-modal-panel bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col">
+        <ImageAdjustmentFilter
+          id={imageFilterId}
+          exposure={exposure}
+          vibrance={vibrance}
+        />
+        <div className="cropper-modal-header p-4 border-b border-neutral-200 flex justify-between items-center shrink-0">
           <h3 className="font-semibold text-lg">{lang.cropImage}</h3>
           <button onClick={onClose} className="text-neutral-500 hover:text-black">
             ✕
           </button>
         </div>
-        <div className="relative w-full flex-1 min-h-[40vh] sm:min-h-[500px] bg-neutral-900 flex items-center justify-center overflow-hidden">
+        <div className="cropper-modal-stage relative w-full shrink-0 bg-neutral-900 flex items-center justify-center overflow-hidden">
           {fitMode === 'contain' ? (
             <div className="absolute inset-4 sm:inset-12 flex items-center justify-center pointer-events-none">
               <div className="relative shadow-2xl bg-white inline-block max-w-full max-h-full rounded-sm overflow-hidden">
@@ -181,7 +220,12 @@ export default function ImageCropperModal({ isOpen, imageUrl, aspectRatio, initi
                   style={{ display: 'block' }}
                 />
                 <div className="absolute inset-0">
-                  <img src={imageUrl} alt="Padded Preview" className="w-full h-full object-contain" />
+                  <img
+                    src={imageUrl}
+                    alt="Padded Preview"
+                    className="w-full h-full object-contain"
+                    style={{ filter: imageFilter }}
+                  />
                 </div>
               </div>
             </div>
@@ -194,13 +238,14 @@ export default function ImageCropperModal({ isOpen, imageUrl, aspectRatio, initi
               onCropChange={setCrop}
               onCropComplete={handleCropComplete}
               onZoomChange={setZoom}
+              style={{ mediaStyle: { filter: imageFilter } }}
             />
           )}
         </div>
-        <div className="p-4 border-t border-neutral-200 bg-neutral-50 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-            <div className="flex-1 flex items-center gap-4">
-              <span className="text-sm font-medium text-neutral-600">{lang.zoom}</span>
+        <div className="cropper-modal-controls p-4 border-t border-neutral-200 bg-neutral-50 shrink-0">
+          <div className="cropper-control-list space-y-3 mb-4">
+            <div className="cropper-control-row flex items-center gap-3">
+              <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.zoom}</span>
               <input
                 type="range"
                 value={zoom}
@@ -212,26 +257,72 @@ export default function ImageCropperModal({ isOpen, imageUrl, aspectRatio, initi
                 className="w-full accent-black disabled:opacity-50"
                 disabled={fitMode === 'contain'}
               />
+              <span className="w-11 text-right text-xs tabular-nums text-neutral-500">{zoom.toFixed(1)}x</span>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer shrink-0">
+            <div className="cropper-control-row flex items-center gap-3">
+              <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.exposure}</span>
               <input
-                type="checkbox"
-                checked={fitMode === 'contain'}
-                onChange={(e) => setFitMode(e.target.checked ? 'contain' : 'cover')}
-                className="w-4 h-4 cursor-pointer accent-black"
+                type="range"
+                value={exposure}
+                min={-1}
+                max={1}
+                step={0.1}
+                aria-label={lang.exposure}
+                onInput={(e) => setExposure(Number(e.currentTarget.value))}
+                className="w-full accent-black"
               />
-              <span className="text-sm text-neutral-600 font-medium">{lang.fitToFrame}</span>
-            </label>
+              <span className="w-11 text-right text-xs tabular-nums text-neutral-500">
+                {exposure > 0 ? '+' : ''}{exposure.toFixed(1)}
+              </span>
+            </div>
+            <div className="cropper-control-row flex items-center gap-3">
+              <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.vibrance}</span>
+              <input
+                type="range"
+                value={vibrance}
+                min={-50}
+                max={50}
+                step={1}
+                aria-label={lang.vibrance}
+                onInput={(e) => setVibrance(Number(e.currentTarget.value))}
+                className="w-full accent-black"
+              />
+              <span className="w-11 text-right text-xs tabular-nums text-neutral-500">
+                {vibrance > 0 ? '+' : ''}{vibrance}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={fitMode === 'contain'}
+                  onChange={(e) => setFitMode(e.target.checked ? 'contain' : 'cover')}
+                  className="w-4 h-4 cursor-pointer accent-black"
+                />
+                <span className="text-sm text-neutral-600 font-medium">{lang.fitToFrame}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setExposure(DEFAULT_EXPOSURE);
+                  setVibrance(DEFAULT_VIBRANCE);
+                }}
+                disabled={exposure === DEFAULT_EXPOSURE && vibrance === DEFAULT_VIBRANCE}
+                className="text-xs font-medium text-neutral-500 hover:text-black disabled:opacity-40 disabled:cursor-default"
+              >
+                {lang.resetAdjustments}
+              </button>
+            </div>
           </div>
-          <div className="flex flex-col lg:flex-row justify-between items-center w-full gap-3">
-            <button onClick={onChangeImage} className="w-full lg:w-auto px-5 py-2 rounded-lg font-medium text-black border border-black hover:bg-neutral-100 transition-colors">
+          <div className="cropper-action-row flex flex-col sm:flex-row justify-between items-center w-full gap-3">
+            <button onClick={onChangeImage} className="w-full sm:w-auto px-5 py-2 rounded-lg font-medium text-black border border-black hover:bg-neutral-100 transition-colors">
               {lang.changeImage}
             </button>
-            <div className="flex gap-3 w-full lg:w-auto">
-              <button onClick={onClose} className="flex-1 lg:flex-none px-5 py-2 rounded-lg font-medium text-neutral-600 hover:bg-neutral-200 transition-colors text-center">
+            <div className="flex gap-3 w-full sm:w-auto">
+              <button onClick={onClose} className="flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium text-neutral-600 hover:bg-neutral-200 transition-colors text-center">
                 {lang.cancel}
               </button>
-              <button onClick={handleSave} className="flex-1 lg:flex-none px-5 py-2 rounded-lg font-medium bg-black text-white hover:bg-neutral-800 transition-colors text-center">
+              <button onClick={handleSave} className="flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium bg-black text-white hover:bg-neutral-800 transition-colors text-center">
                 {lang.applyCrop}
               </button>
             </div>
