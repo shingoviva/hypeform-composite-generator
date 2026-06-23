@@ -33,6 +33,8 @@ export interface ImageData {
   originalUrl: string | null;
   croppedUrl: string | null;
   fitMode?: 'cover' | 'contain';
+  exposure?: number;
+  vibrance?: number;
 }
 
 export interface WatermarkData {
