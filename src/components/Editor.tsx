@@ -66,7 +66,12 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage }: E
     }
   };
 
-  const handleCropComplete = (croppedUrl: string, fitMode: 'cover' | 'contain') => {
+  const handleCropComplete = (
+    croppedUrl: string,
+    fitMode: 'cover' | 'contain',
+    exposure: number,
+    vibrance: number
+  ) => {
     if (editingImageId) {
       setState(prev => ({
         ...prev,
@@ -76,7 +81,9 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage }: E
             ...prev.images[editingImageId as keyof typeof prev.images],
             originalUrl: tempImageUrl,
             croppedUrl: croppedUrl,
-            fitMode: fitMode
+            fitMode: fitMode,
+            exposure,
+            vibrance
           }
         }
       }));
@@ -288,6 +295,8 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage }: E
           imageUrl={tempImageUrl}
           aspectRatio={4/5}
           initialFitMode={state.images[editingImageId as keyof typeof state.images]?.fitMode || 'cover'}
+          initialExposure={state.images[editingImageId as keyof typeof state.images]?.exposure}
+          initialVibrance={state.images[editingImageId as keyof typeof state.images]?.vibrance}
           onClose={() => {
             setTempImageUrl(null);
             setEditingImageId(null);
