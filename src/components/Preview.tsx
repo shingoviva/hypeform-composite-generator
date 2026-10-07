@@ -5,6 +5,7 @@ import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import { getNameTypography, NAME_FONTS } from '../nameTypography';
 import { getCompositeLayout } from '../compositeLayout';
 import { applyCompositeTypography } from '../compositeTypography';
+import LogoImage from './LogoImage';
 
 interface PreviewProps {
   state: AppState;
@@ -72,8 +73,10 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
     fitName();
     document.fonts.ready.then(fitName);
     document.fonts.addEventListener('loadingdone', fitName);
-    return () => { active = false; document.fonts.removeEventListener('loadingdone', fitName); };
-  }, [state]);
+    const observer = new ResizeObserver(fitName);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => { active = false; observer.disconnect(); document.fonts.removeEventListener('loadingdone', fitName); };
+  }, [state, scale]);
   const watermarkSize = state.watermark.size ?? 100;
   const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
   const watermarkRatio = (watermarkScale - 40) / 100;
@@ -356,9 +359,9 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 bottom: layout.margin,
                 maxWidth: layout.galleryWidth,
                 maxHeight: WATERMARK_BOX_HEIGHT,
-                overflow: 'hidden',
+                overflow: state.watermark.type === 'image' ? 'hidden' : 'visible',
                 width: state.watermark.type === 'image' ? WATERMARK_BOX_WIDTH : undefined,
-                height: state.watermark.type === 'image' ? WATERMARK_BOX_HEIGHT : undefined,
+                height: WATERMARK_BOX_HEIGHT,
               }}
             >
               {state.watermark.type === 'text' && state.watermark.text && (
@@ -378,8 +381,12 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               )}
               {state.watermark.type === 'image' && state.watermark.imageUrl && (
-                <img 
+                <LogoImage
                   src={state.watermark.imageUrl} 
+                  onLoad={() => {
+                    const root = containerRef.current?.querySelector<HTMLElement>('#composite-canvas');
+                    if (root) applyCompositeTypography(root, state);
+                  }}
                   alt="Agency Logo" 
                   className="block w-auto object-contain object-right-bottom"
                   style={{

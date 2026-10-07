@@ -37,8 +37,26 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
     }
   }
   const stamp = root.querySelector<HTMLElement>('[data-composite="watermark"]');
+  let watermarkRoom = 28;
+  if (stamp && root.clientWidth && root.getBoundingClientRect().width) {
+    const base = root.getBoundingClientRect();
+    const scale = base.width / root.clientWidth;
+    const blocks = attributes ? Array.from(attributes.children) as HTMLElement[] : [];
+    const contentBottom = Math.max(0, ...blocks.filter(block => block.textContent?.trim()).map(block => (block.getBoundingClientRect().bottom - base.top) / scale));
+    const bottom = side ? 6 : Number(state.compositeMargin ?? 28);
+    watermarkRoom = contentBottom ? Math.max(20, root.clientHeight - bottom - contentBottom - 8) : 64;
+  }
+  if (stamp && state.watermark.type === 'image') {
+    const image = stamp.querySelector<HTMLImageElement>('img');
+    const maximum = Math.min(64, watermarkRoom);
+    const height = Math.min(maximum, maximum * Math.min(140, Math.max(40, state.watermark.size ?? 100)) / 140);
+    Object.assign(stamp.style, { height: `${maximum}px`, maxHeight: `${maximum}px`, width: '190px', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' });
+    if (image) Object.assign(image.style, { width: '100%', height: `${height}px`, maxHeight: `${maximum}px`, objectFit: 'contain', objectPosition: 'right bottom' });
+  }
   const text = state.watermark.type === 'text' ? stamp?.firstElementChild as HTMLElement | null : null;
   if (stamp && text) {
+    const safeHeight = Math.min(44, watermarkRoom);
+    Object.assign(stamp.style, { height: `${safeHeight}px`, maxHeight: `${safeHeight}px`, overflow: 'visible', alignItems: 'center' });
     const font = NAME_FONTS.find(font => font.family === state.watermark.font) || NAME_FONTS[0];
     const nameSize = name ? parseFloat(name.style.fontSize) : 52;
     const height = stamp.clientHeight || 28;

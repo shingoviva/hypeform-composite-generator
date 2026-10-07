@@ -4,9 +4,11 @@ import { getProtectedExposureTable, getVibranceAmount } from './imageAdjustments
 import { photoContext } from './photoCanvas';
 import { layoutInstagram } from './instagramLayout';
 import { applyCompositeTypography } from './compositeTypography';
+import { prepareLogo } from './logoImage';
 
 async function preparePhoto(element: HTMLImageElement, state: AppState) {
   await element.decode();
+  if (element.closest('[data-composite="watermark"]') && state.watermark.type === 'image') return prepareLogo(element.src);
   const photo = Object.values(state.images).find(image =>
     element.style.filter.includes(`preview-image-adjustment-${image.id}`));
   if (!photo || (!photo.exposure && !photo.vibrance)) {

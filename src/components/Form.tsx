@@ -6,6 +6,7 @@ import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import NameTypographyControls from './NameTypographyControls';
 import { X, Upload } from 'lucide-react';
 import WatermarkAppearanceControls from './WatermarkAppearanceControls';
+import LogoImage from './LogoImage';
 import WatermarkTypographyControls from './WatermarkTypographyControls';
 
 interface FormProps {
@@ -457,7 +458,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   />
                   {state.watermark.imageUrl ? (
                     <div className="relative inline-block">
-                      <img src={state.watermark.imageUrl} className="h-12 max-w-40 object-contain" />
+                      <LogoImage src={state.watermark.imageUrl} alt="Agency Logo" className="h-12 max-w-40 object-contain" />
                       <button onClick={handleRemoveWatermarkImage} aria-label={uiLanguage === 'ja' ? 'ロゴ画像を削除' : 'Remove logo'} title={uiLanguage === 'ja' ? 'ロゴ画像を削除' : 'Remove logo'} className="absolute -top-2 -right-2 bg-white border border-gray-300 text-gray-600 rounded w-8 h-8 flex items-center justify-center hover:text-black"><X size={16} /></button>
                     </div>
                   ) : (
