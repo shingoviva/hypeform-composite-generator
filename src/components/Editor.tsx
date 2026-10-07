@@ -4,7 +4,8 @@ import Form from './Form';
 import Preview from './Preview';
 import jsPDF from 'jspdf';
 import { renderComposite } from '../exportComposite';
-import { Share2, Download, X, RotateCcw } from 'lucide-react';
+import { Share2, Download, X, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import PreviewOptions from './PreviewOptions';
 import ImageCropperModal from './ImageCropperModal';
 import { UiLanguage } from '../App';
 
@@ -50,6 +51,11 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
     ? { saving: '端末に保存中…', saved: '端末に保存済み', unavailable: '端末への保存不可' }[saveStatus]
     : { saving: 'Saving locally...', saved: 'Saved on this device', unavailable: 'Local save unavailable' }[saveStatus];
   const [exportResult, setExportResult] = useState<{ file: File; url: string; format: 'pdf' | 'jpeg' } | null>(null);
+  const [showPreviewOptions, setShowPreviewOptions] = useState(false);
+  const [instagramResult, setInstagramResult] = useState<{ file: File; url: string; side: 'left' | 'right' }[] | null>(null);
+  useEffect(() => () => {
+    instagramResult?.forEach(result => URL.revokeObjectURL(result.url));
+  }, [instagramResult]);
   const [shareError, setShareError] = useState('');
   useEffect(() => () => {
     if (exportResult) URL.revokeObjectURL(exportResult.url);
@@ -198,6 +204,33 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
   };
 
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
+  const performInstagramExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    const results: NonNullable<typeof instagramResult> = [];
+    try {
+      const element = document.getElementById('composite-canvas');
+      if (!element) throw new Error('Preview unavailable');
+      for (const side of ['left', 'right'] as const) {
+        const canvas = await renderComposite(element, state, false, 'jpeg', side);
+        try {
+          const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Image export failed')), 'image/jpeg', .97));
+          const file = new File([blob], `${state.profile.name || 'composite'}_instagram_${side}.jpg`, { type: 'image/jpeg' });
+          results.push({ file, url: URL.createObjectURL(file), side });
+        } finally { canvas.width = canvas.height = 0; }
+      }
+      setShareError('');
+      setInstagramResult(results);
+      setShowPreviewOptions(false);
+    } catch (error) {
+      results.forEach(result => URL.revokeObjectURL(result.url));
+      alert(`${uiLanguage === 'ja' ? '出力できませんでした' : 'Export failed'}: ${(error as Error).message}`);
+    } finally { setIsExporting(false); }
+  };
+  const shareInstagram = async (file: File) => {
+    try { setShareError(''); await navigator.share({ files: [file] }); }
+    catch (error) { if ((error as Error).name !== 'AbortError') setShareError(uiLanguage === 'ja' ? '共有できませんでした。画像の長押し、またはダウンロードで保存してください。' : 'Sharing failed. Touch and hold the image, or use Download.'); }
+  };
 
   return (
     <div className="flex flex-col lg:flex-row w-full h-full absolute inset-0 overflow-hidden bg-white">
@@ -277,6 +310,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           </div>
           <div className="flex space-x-4 shrink-0 pl-2">
             <div className="flex items-center gap-4">
+              <button onClick={() => setShowPreviewOptions(value => !value)} aria-expanded={showPreviewOptions} aria-controls="preview-options" aria-label={uiLanguage === 'ja' ? 'レイアウト調整' : 'Layout adjustments'} title={uiLanguage === 'ja' ? 'レイアウト調整' : 'Layout adjustments'} className={`p-2 rounded ${showPreviewOptions ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-black'}`}><SlidersHorizontal size={18} /></button>
               <select 
                 value={uiLanguage}
                 onChange={(e) => setUiLanguage(e.target.value as UiLanguage)}
@@ -292,6 +326,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
             </div>
           </div>
         </header>
+        {showPreviewOptions && <PreviewOptions state={state} setState={setState} language={uiLanguage} onClose={() => setShowPreviewOptions(false)} onInstagram={performInstagramExport} exporting={isExporting} />}
 
         <div className="flex-1 min-h-0 flex items-center justify-center p-4 lg:p-12 overflow-hidden relative">
           <Preview state={state} onImageClick={handleImageClick} />
@@ -363,6 +398,20 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           </section>
         </div>
       )}
+
+      {instagramResult && <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
+        <section role="dialog" aria-modal="true" aria-labelledby="instagram-title" className="bg-white rounded-lg p-5 w-full max-w-2xl max-h-[90dvh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-3"><h2 id="instagram-title" className="font-bold">Instagram · 1080 × 1350</h2><button onClick={() => setInstagramResult(null)} aria-label={uiLanguage === 'ja' ? '閉じる' : 'Close'} className="p-2"><X size={20} /></button></div>
+          <div className="grid grid-cols-2 gap-3">{instagramResult.map(result => <div key={result.side} className="min-w-0">
+            <p className="text-xs text-gray-500 mb-2">{result.side === 'left' ? (uiLanguage === 'ja' ? '1 · 左側' : '1 · Left') : (uiLanguage === 'ja' ? '2 · 右側' : '2 · Right')}</p>
+            <img src={result.url} alt={`Instagram ${result.side}`} className="w-full border border-gray-100" />
+            {navigator.canShare?.({ files: [result.file] }) && <button onClick={() => shareInstagram(result.file)} className="w-full text-xs py-3 flex items-center justify-center gap-2 mt-2 bg-black text-white"><Share2 size={16} />{uiLanguage === 'ja' ? '共有して保存' : 'Share and save'}</button>}
+            <a href={result.url} download={result.file.name} className="w-full text-xs py-3 flex items-center justify-center gap-2 mt-2 border border-gray-300"><Download size={16} />{uiLanguage === 'ja' ? 'ダウンロード' : 'Download'}</a>
+          </div>)}</div>
+          <p className="text-xs text-gray-500 mt-4">{uiLanguage === 'ja' ? 'iPhoneでは共有メニューの「画像を保存」、または画像の長押しで写真アプリへ保存できます。' : 'On iPhone, choose Save Image from the share menu, or touch and hold each image to save to Photos.'}</p>
+          {shareError && <p role="alert" className="text-sm text-red-700 mt-3">{shareError}</p>}
+        </section>
+      </div>}
 
       {tempImageUrl && editingImageId && (
         <ImageCropperModal

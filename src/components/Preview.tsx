@@ -94,14 +94,14 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
   const renderNameAndContact = () => (
     <>
-      <h1 
+      <h1 data-composite="name"
         className={`font-sans ${((profile.name || 'NAME').trim().includes(' ') || (profile.name || 'NAME').length > 10) ? 'text-[3.2rem] leading-[0.95]' : 'text-[3.8rem] leading-[0.9]'} font-black tracking-tighter uppercase mb-2 ${profile.nameItalic ? 'italic' : ''}`}
         style={{ fontFamily: profile.nameFont || '"Oswald", sans-serif' }}
       >
         {profile.name || 'NAME'}
       </h1>
       {contactParts.length > 0 && (
-        <p className="font-sans text-[0.6rem] font-bold tracking-normal uppercase flex justify-center gap-1.5 whitespace-nowrap">
+        <p data-composite="contact" className="font-sans text-[0.6rem] font-bold tracking-normal uppercase flex justify-center gap-1.5 whitespace-nowrap">
           {contactParts.map((part, idx) => (
             <React.Fragment key={idx}>
               <span>{part}</span>
@@ -119,14 +119,14 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
     
     return (
     <>
-      <div className="font-sans text-[0.52rem] font-bold tracking-wider uppercase flex justify-center gap-x-2 w-full whitespace-nowrap">
+      <div data-composite="measurements" className="font-sans text-[0.52rem] font-bold tracking-wider uppercase flex justify-center gap-x-2 w-full whitespace-nowrap">
         <span className="flex gap-1"><span className="text-gray-400">HEIGHT</span><span>{formatMeasurement(profile.height, 'height')}</span></span>
         <span className="flex gap-1"><span className="text-gray-400">BUST</span><span>{formatMeasurement(profile.bust, 'generic')}</span></span>
         <span className="flex gap-1"><span className="text-gray-400">WAIST</span><span>{formatMeasurement(profile.waist, 'generic')}</span></span>
         <span className="flex gap-1"><span className="text-gray-400">HIPS</span><span>{formatMeasurement(profile.hips, 'generic')}</span></span>
         <span className="flex gap-1"><span className="text-gray-400">SHOES</span><span>{formatMeasurement(profile.shoes, 'shoes')}</span></span>
       </div>
-      <div className="font-sans text-[0.52rem] font-bold tracking-wider uppercase flex flex-wrap justify-center gap-x-2 gap-y-0.5 w-full whitespace-normal">
+      <div data-composite="details" className="font-sans text-[0.52rem] font-bold tracking-wider uppercase flex flex-wrap justify-center gap-x-2 gap-y-0.5 w-full whitespace-normal">
         <span className="flex gap-1 shrink-0"><span className="text-gray-400">HAIR</span><span>{profile.hair}</span></span>
         <span className="flex gap-1 shrink-0"><span className="text-gray-400">EYES</span><span>{profile.eyes}</span></span>
         {profile.showNationality && profile.nationality && <span className="flex gap-1 shrink-0"><span className="text-gray-400">NATIONALITY</span><span>{profile.nationality}</span></span>}
@@ -163,7 +163,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 <div className="w-[49%] flex flex-col">
                   <div 
                     className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
-                    onClick={() => onImageClick('main')}
+                    data-composite="main" onClick={() => onImageClick('main')}
                   >
                     {images.main.croppedUrl ? (
                       images.main.fitMode === 'contain' ? (
@@ -178,7 +178,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
 
                 <div className="w-[51%] flex flex-col">
-                  <div className="grid grid-cols-2 grid-rows-2 gap-[14px] w-full h-full">
+                  <div data-composite="gallery" className="grid grid-cols-2 grid-rows-2 gap-[14px] w-full h-full">
                     <div 
                       className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                       onClick={() => onImageClick('sub1')}
@@ -251,7 +251,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               
               <div 
                 className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
-                onClick={() => onImageClick('main')}
+                data-composite="main" onClick={() => onImageClick('main')}
               >
                 {images.main.croppedUrl ? (
                   images.main.fitMode === 'contain' ? (
@@ -267,7 +267,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
             {/* Right Column */}
             <div className="w-[51%] h-full flex flex-col pb-1">
-              <div className="grid grid-cols-2 grid-rows-2 gap-[14px] flex-1 min-h-0">
+              <div data-composite="gallery" className="grid grid-cols-2 grid-rows-2 gap-[14px] flex-1 min-h-0">
                 <div 
                   className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                   onClick={() => onImageClick('sub1')}
@@ -328,7 +328,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
           {state.watermark.enabled && (
             <div 
-              className={`absolute bottom-6 right-6 pointer-events-none z-50 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
+              data-composite="watermark" className={`absolute bottom-6 right-6 pointer-events-none z-50 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
               style={{
                 opacity: state.watermark.opacity / 100,
                 width: state.watermark.type === 'image' ? WATERMARK_BOX_WIDTH : undefined,

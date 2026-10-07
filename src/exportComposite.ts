@@ -2,6 +2,7 @@ import html2canvas from 'html2canvas';
 import { AppState } from './types';
 import { getProtectedExposureTable, getVibranceAmount } from './imageAdjustments';
 import { photoContext } from './photoCanvas';
+import { layoutInstagram } from './instagramLayout';
 
 async function preparePhoto(element: HTMLImageElement, state: AppState) {
   await element.decode();
@@ -49,26 +50,30 @@ async function preparePhoto(element: HTMLImageElement, state: AppState) {
   return result;
 }
 
-export async function renderComposite(element: HTMLElement, state: AppState, highResolution: boolean, format: 'pdf' | 'jpeg' = 'pdf') {
+export async function renderComposite(element: HTMLElement, state: AppState, highResolution: boolean, format: 'pdf' | 'jpeg' = 'pdf', instagramSide?: 'left' | 'right') {
   await document.fonts.ready;
   const photos: string[] = [];
   for (const image of Array.from(element.querySelectorAll('img'))) {
     photos.push(await preparePhoto(image, state));
   }
   const output = document.createElement('canvas');
-  const scale = highResolution ? 3 : 2;
-  output.width = 1123 * scale;
-  output.height = 794 * scale;
+  const scale = instagramSide ? 1 : highResolution ? 3 : 2;
+  const width = instagramSide ? 1080 : 1123;
+  const height = instagramSide ? 1350 : 794;
+  output.width = width * scale;
+  output.height = height * scale;
   // JPEG retains P3 on supporting browsers; jsPDF's DeviceRGB output uses sRGB.
   photoContext(output, format === 'jpeg');
   return html2canvas(element, {
     canvas: output,
     backgroundColor: '#ffffff',
     scale,
-    width: 1123,
-    height: 794,
+    width,
+    height,
     windowWidth: 1280,
-    windowHeight: 1000,
+    windowHeight: instagramSide ? 1500 : 1000,
+    scrollX: 0,
+    scrollY: 0,
     logging: false,
     onclone: async (documentClone) => {
       const target = documentClone.getElementById('composite-canvas')!;
@@ -79,19 +84,23 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
       const colorCanvas = document.createElement('canvas');
       colorCanvas.width = colorCanvas.height = 1;
       const colorContext = colorCanvas.getContext('2d')!;
-      for (const node of [target, ...Array.from(target.querySelectorAll<HTMLElement>('*'))]) {
-        const computed = documentClone.defaultView!.getComputedStyle(node);
-        for (const property of ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'text-decoration-color']) {
-          const value = computed.getPropertyValue(property);
-          if (/oklch|oklab|color\(|lab\(|lch\(/.test(value)) {
-            colorContext.clearRect(0, 0, 1, 1);
-            colorContext.fillStyle = value;
-            colorContext.fillRect(0, 0, 1, 1);
-            const [r, g, b, a] = colorContext.getImageData(0, 0, 1, 1).data;
-            node.style.setProperty(property, `rgba(${r},${g},${b},${a / 255})`);
+      const normalizeColors = () => {
+        for (const node of [target, ...Array.from(target.querySelectorAll<HTMLElement>('*'))]) {
+          const computed = documentClone.defaultView!.getComputedStyle(node);
+          node.style.boxShadow = 'none';
+          node.style.textShadow = 'none';
+          for (const property of ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'text-decoration-color']) {
+            const value = computed.getPropertyValue(property);
+            if (/oklch|oklab|color\(|lab\(|lch\(/.test(value)) {
+              colorContext.clearRect(0, 0, 1, 1);
+              colorContext.fillStyle = value;
+              colorContext.fillRect(0, 0, 1, 1);
+              const [r, g, b, a] = colorContext.getImageData(0, 0, 1, 1).data;
+              node.style.setProperty(property, `rgba(${r},${g},${b},${a / 255})`);
+            }
           }
         }
-      }
+      };
       target.querySelectorAll('svg').forEach(svg => svg.remove());
       const images = Array.from(target.querySelectorAll('img'));
       for (let i = 0; i < images.length; i++) {
@@ -100,6 +109,35 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
         images[i].style.filter = 'none';
         await images[i].decode();
       }
+      if (instagramSide) layoutInstagram(target, state, instagramSide);
+      // html2canvas does not reliably honor object-fit; bake each visible frame.
+      for (const image of Array.from(target.querySelectorAll('img'))) {
+        const computed = documentClone.defaultView!.getComputedStyle(image);
+        const width = image.clientWidth;
+        const height = image.clientHeight;
+        if (!width || !height) continue;
+        const frame = document.createElement('canvas');
+        frame.width = Math.round(width * scale);
+        frame.height = Math.round(height * scale);
+        const context = photoContext(frame, format === 'jpeg')!;
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, frame.width, frame.height);
+        let drawWidth = frame.width;
+        let drawHeight = frame.height;
+        if (computed.objectFit === 'cover' || computed.objectFit === 'contain') {
+          const ratio = (computed.objectFit === 'contain' ? Math.min : Math.max)(frame.width / image.naturalWidth, frame.height / image.naturalHeight);
+          drawWidth = image.naturalWidth * ratio;
+          drawHeight = image.naturalHeight * ratio;
+        }
+        context.drawImage(image, (frame.width - drawWidth) / 2, (frame.height - drawHeight) / 2, drawWidth, drawHeight);
+        image.src = frame.toDataURL('image/png');
+        image.style.width = `${width}px`;
+        image.style.height = `${height}px`;
+        await image.decode();
+        frame.width = frame.height = 0;
+      }
+      await documentClone.fonts.ready;
+      normalizeColors();
     }
   });
 }

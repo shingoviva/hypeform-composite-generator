@@ -1,0 +1,57 @@
+import React, { useEffect, useRef } from 'react';
+import { X, Instagram } from 'lucide-react';
+import { AppState, ProfileData } from '../types';
+import { UiLanguage } from '../App';
+
+interface Props {
+  state: AppState;
+  setState: React.Dispatch<React.SetStateAction<AppState>>;
+  language: UiLanguage;
+  onClose: () => void;
+  onInstagram: () => void;
+  exporting: boolean;
+}
+
+export default function PreviewOptions({ state, setState, language, onClose, onInstagram, exporting }: Props) {
+  const ja = language === 'ja';
+  const panelRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+        document.querySelector<HTMLButtonElement>('[aria-controls="preview-options"]')?.focus();
+      }
+    };
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Element;
+      if (!panelRef.current?.contains(target) && !target.closest('[aria-controls="preview-options"]')) onClose();
+    };
+    document.addEventListener('keydown', escape);
+    document.addEventListener('pointerdown', outside);
+    return () => { document.removeEventListener('keydown', escape); document.removeEventListener('pointerdown', outside); };
+  }, [onClose]);
+  const profile = (patch: Partial<ProfileData>) => setState(previous => ({ ...previous, profile: { ...previous.profile, ...patch } }));
+  const watermark = (patch: Partial<AppState['watermark']>) => setState(previous => ({ ...previous, watermark: { ...previous.watermark, ...patch } }));
+  const fonts = ['Oswald', 'Montserrat', 'Playfair Display', 'Inter', 'Bodoni Moda', 'Anton', 'Cormorant Garamond'];
+  const visibility: [keyof ProfileData, string][] = [['showContact', ja ? '電話番号' : 'Phone'], ['showEmail', ja ? 'メール' : 'Email'], ['showNationality', ja ? '国籍' : 'Nationality'], ['showResidence', ja ? '拠点' : 'Base'], ['showExperience', ja ? '実績' : 'Experience']];
+  return <section ref={panelRef} id="preview-options" aria-label={ja ? 'レイアウト調整' : 'Layout adjustments'} className="absolute top-16 right-2 z-[60] w-[288px] max-w-[calc(100%_-_1rem)] max-h-[calc(100%_-_4.5rem)] overflow-y-auto bg-white border border-gray-200 shadow-lg rounded-lg p-4 text-xs">
+    <div className="flex justify-between items-center mb-3"><h2 className="font-bold">{ja ? 'レイアウト調整' : 'Layout adjustments'}</h2><button onClick={onClose} aria-label={ja ? '調整を閉じる' : 'Close adjustments'} className="p-2"><X size={16} /></button></div>
+    <div className="space-y-3">
+      <label className="flex items-center justify-between gap-2"><span>{ja ? '名前の位置' : 'Name position'}</span><select value={state.profile.nameAtBottom ? 'bottom' : 'top'} onChange={e => profile({ nameAtBottom: e.target.value === 'bottom' })} className="border-b border-gray-200 bg-white py-1"><option value="top">{ja ? '上' : 'Top'}</option><option value="bottom">{ja ? '下' : 'Bottom'}</option></select></label>
+      <label className="flex items-center justify-between gap-2"><span>{ja ? '書体' : 'Typeface'}</span><select aria-label={ja ? '名前の書体' : 'Name typeface'} value={state.profile.nameFont || '"Oswald", sans-serif'} onChange={e => profile({ nameFont: e.target.value })} className="max-w-40 border-b border-gray-200 bg-white py-1">{fonts.map(font => <option key={font} value={`"${font}", ${['Playfair Display', 'Bodoni Moda', 'Cormorant Garamond'].includes(font) ? 'serif' : 'sans-serif'}`}>{font}</option>)}</select></label>
+      <label className="flex items-center gap-2"><input type="checkbox" checked={!!state.profile.nameItalic} onChange={e => profile({ nameItalic: e.target.checked })} className="accent-black" />{ja ? '斜体' : 'Italic'}</label>
+      <details className="border-t border-gray-100 pt-3"><summary className="cursor-pointer font-medium">{ja ? '表示する情報' : 'Visible information'}</summary><div className="grid grid-cols-2 gap-3 mt-3">{visibility.map(([key, label]) => <label key={key} className="flex items-center gap-2"><input type="checkbox" checked={!!state.profile[key]} onChange={e => profile({ [key]: e.target.checked })} className="accent-black" />{label}</label>)}</div></details>
+      <details className="border-t border-gray-100 pt-3"><summary className="cursor-pointer font-medium">{ja ? 'ウォーターマーク' : 'Watermark'}</summary><div className="space-y-3 mt-3">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={state.watermark.enabled} onChange={e => watermark({ enabled: e.target.checked })} className="accent-black" />{ja ? '表示' : 'Show'}</label>
+        {state.watermark.type === 'text' && <label className="block">{ja ? 'テキスト' : 'Text'}<input value={state.watermark.text} onChange={e => watermark({ text: e.target.value })} className="w-full border-b border-gray-200 py-1 mt-1" /></label>}
+        <label className="block">{ja ? 'サイズ' : 'Size'}<input aria-label={ja ? 'ウォーターマークのサイズ' : 'Watermark size'} type="range" min="40" max="140" value={state.watermark.size ?? 100} onChange={e => watermark({ size: Number(e.target.value) })} className="w-full accent-black" /></label>
+        <label className="block">{ja ? '濃さ' : 'Opacity'}<input aria-label={ja ? 'ウォーターマークの濃さ' : 'Watermark opacity'} type="range" min="0" max="100" value={state.watermark.opacity} onChange={e => watermark({ opacity: Number(e.target.value) })} className="w-full accent-black" /></label>
+      </div></details>
+      <details className="border-t border-gray-100 pt-3"><summary className="cursor-pointer font-medium flex items-center gap-2"><Instagram size={14} />{ja ? 'Instagram用に出力' : 'Instagram export'}</summary><div className="space-y-3 mt-3">
+        <span className="text-gray-500">1080 × 1350 · 4:5 · {ja ? '左・右の2枚' : 'Left + right'}</span>
+        {(['margin', 'gap'] as const).map(key => <label key={key} className="block">{key === 'margin' ? (ja ? '外側の余白' : 'Outer margin') : (ja ? '写真の間隔' : 'Photo spacing')}<span className="float-right text-gray-500">{state.instagram?.[key] ?? (key === 'margin' ? 64 : 24)} px</span><input aria-label={key === 'margin' ? 'Instagram margin' : 'Instagram spacing'} type="range" min={key === 'margin' ? 40 : 16} max={key === 'margin' ? 100 : 40} value={state.instagram?.[key] ?? (key === 'margin' ? 64 : 24)} onChange={e => setState(previous => ({ ...previous, instagram: { margin: previous.instagram?.margin ?? 64, gap: previous.instagram?.gap ?? 24, [key]: Number(e.target.value) } }))} className="w-full accent-black" /></label>)}
+        <button disabled={exporting} onClick={onInstagram} className="w-full border border-gray-300 py-2 flex items-center justify-center gap-2 disabled:opacity-50"><Instagram size={16} />{exporting ? (ja ? '作成中…' : 'Preparing...') : (ja ? '2枚を作成' : 'Prepare two images')}</button>
+      </div></details>
+    </div>
+  </section>;
+}

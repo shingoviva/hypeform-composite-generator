@@ -51,6 +51,7 @@ export interface WatermarkData {
 }
 
 export interface AppState {
+  instagram?: { margin: number; gap: number };
   profile: ProfileData;
   watermark: WatermarkData;
   images: {
