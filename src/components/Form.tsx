@@ -4,7 +4,8 @@ import { UiLanguage } from '../App';
 import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import NameTypographyControls from './NameTypographyControls';
-import SnapRange from './SnapRange';
+import { X, Upload } from 'lucide-react';
+import WatermarkAppearanceControls from './WatermarkAppearanceControls';
 import WatermarkTypographyControls from './WatermarkTypographyControls';
 
 interface FormProps {
@@ -43,13 +44,13 @@ const t = {
     mainPhoto: 'Main Photo (Left Column)',
     subPhotos: 'Sub Photos (Right Column)',
     fitToFrame: 'Fit entire image (Show borders)',
-    watermark: 'Agency Logo / Text Overlay',
+    watermark: 'Watermark',
     watermarkType: 'Type',
     watermarkText: 'Text',
     watermarkImage: 'Image',
     watermarkOpacity: 'Opacity',
     watermarkSize: 'Size',
-    watermarkEnabled: 'Enable Overlay',
+    watermarkEnabled: 'Show',
   },
   ja: {
     profileDetails: 'プロフィール情報',
@@ -79,13 +80,13 @@ const t = {
     mainPhoto: 'メイン写真 (左列)',
     subPhotos: 'サブ写真 (右列)',
     fitToFrame: '全体を収める（余白あり）',
-    watermark: 'ウォーターマーク（ロゴ / テキスト）',
+    watermark: 'ウォーターマーク',
     watermarkType: '種類',
     watermarkText: 'テキスト',
     watermarkImage: '画像',
     watermarkOpacity: '不透明度',
     watermarkSize: 'サイズ',
-    watermarkEnabled: 'ウォーターマークを有効にする',
+    watermarkEnabled: '表示',
   }
 };
 
@@ -189,7 +190,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
   const watermarkFileRef = React.useRef<HTMLInputElement>(null);
 
   return (
-    <div className="w-full h-full overflow-y-auto p-6 bg-white custom-scrollbar">
+    <div className="profile-form w-full h-full overflow-y-auto p-6 bg-white custom-scrollbar">
       <div className="space-y-8">
         
         {/* Profile Info Section */}
@@ -202,7 +203,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
               <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-1">
                 <span>{lang.name}</span>
               </label>
-              <input type="text" name="name" value={state.profile.name} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent mb-2" />
+              <input type="text" aria-label={lang.name} name="name" value={state.profile.name} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent mb-2" />
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-1 cursor-pointer">
                   <input 
@@ -233,19 +234,19 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   <span>{lang.contact}</span>
                   <input type="checkbox" name="showContact" checked={state.profile.showContact} onChange={handleToggle} className="accent-black" title="Toggle visibility" />
                 </label>
-                <input type="text" name="contact" value={state.profile.contact} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
+                <input type="tel" aria-label={lang.contact} name="contact" value={state.profile.contact} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
               </div>
               <div>
                 <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-1">
                   <span>{lang.email}</span>
                   <input type="checkbox" name="showEmail" checked={state.profile.showEmail} onChange={handleToggle} className="accent-black" title="Toggle visibility" />
                 </label>
-                <input type="text" name="email" value={state.profile.email} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
+                <input type="email" aria-label={lang.email} name="email" value={state.profile.email} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
               </div>
             </div>
             <div>
               <label className="block text-[10px] uppercase text-gray-400 mb-1">{lang.agency}</label>
-              <input type="text" name="agency" value={state.profile.agency} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
+              <input type="text" aria-label={lang.agency} name="agency" value={state.profile.agency} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
             </div>
           </div>
         </section>
@@ -270,6 +271,8 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                 <input 
                   type="text" 
                   name={field.id} 
+                  aria-label={field.label}
+                  inputMode={['height', 'bust', 'waist', 'hips', 'shoes'].includes(field.id) ? 'decimal' : 'text'}
                   value={state.profile[field.id as keyof ProfileData] as string} 
                   onChange={handleProfileChange} 
                   className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" 
@@ -291,14 +294,14 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                     <span>{lang.nationality}</span>
                     <input type="checkbox" name="showNationality" checked={state.profile.showNationality} onChange={handleToggle} className="accent-black" title="Toggle visibility" />
                   </label>
-                  <input type="text" name="nationality" value={state.profile.nationality} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
+                  <input type="text" aria-label={lang.nationality} name="nationality" value={state.profile.nationality} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
                </div>
                <div>
                   <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-1">
                     <span>{lang.base}</span>
                     <input type="checkbox" name="showResidence" checked={state.profile.showResidence} onChange={handleToggle} className="accent-black" title="Toggle visibility" />
                   </label>
-                  <input type="text" name="residence" value={state.profile.residence} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
+                  <input type="text" aria-label={lang.base} name="residence" value={state.profile.residence} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
                </div>
             </div>
             <div className="space-y-2">
@@ -340,7 +343,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   state.images.main.fitMode === 'contain' ? (
                     <img src={state.images.main.originalUrl || state.images.main.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('form-image-adjustment-main', state.images.main) }} />
                   ) : (
-                    <img src={state.images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('form-image-adjustment-main', state.images.main) }} />
+                    <img src={state.images.main.croppedUrl} alt={lang.mainPhoto} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('form-image-adjustment-main', state.images.main) }} />
                   )
                 ) : (
                   <span className="text-xs text-gray-400">+</span>
@@ -374,7 +377,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                           image.fitMode === 'contain' ? (
                             <img src={image.originalUrl || image.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`, image) }} />
                           ) : (
-                            <img src={image.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`, image) }} />
+                            <img src={image.croppedUrl} alt={`${lang.subPhotos} ${key.slice(-1)}`} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`, image) }} />
                           )
                         ) : (
                           <span className="text-xs text-gray-400">+</span>
@@ -399,7 +402,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
 
         {/* Agency Logo / Watermark Section */}
         <section>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[#a1a1aa]">
               {lang.watermark}
             </h2>
@@ -433,6 +436,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   <input 
                     type="text" 
                     name="text" 
+                    aria-label={lang.watermarkText}
                     placeholder={lang.watermarkText}
                     value={state.watermark.text} 
                     onChange={handleWatermarkChange} 
@@ -454,49 +458,21 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   {state.watermark.imageUrl ? (
                     <div className="relative inline-block">
                       <img src={state.watermark.imageUrl} className="h-12 max-w-40 object-contain" />
-                      <button onClick={handleRemoveWatermarkImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                      <button onClick={handleRemoveWatermarkImage} aria-label={uiLanguage === 'ja' ? 'ロゴ画像を削除' : 'Remove logo'} title={uiLanguage === 'ja' ? 'ロゴ画像を削除' : 'Remove logo'} className="absolute -top-2 -right-2 bg-white border border-gray-300 text-gray-600 rounded w-8 h-8 flex items-center justify-center hover:text-black"><X size={16} /></button>
                     </div>
                   ) : (
                     <button 
                       onClick={() => watermarkFileRef.current?.click()}
-                      className="border border-dashed border-gray-300 rounded py-2 px-4 text-xs text-gray-500 hover:bg-gray-50"
+                      className="border border-dashed border-gray-300 rounded py-2 px-4 text-xs text-gray-500 hover:bg-gray-50 flex items-center gap-2"
                     >
-                      + {lang.watermarkImage}
+                      <Upload size={16} />{lang.watermarkImage}
                     </button>
                   )}
 
                 </div>
               )}
 
-              {state.watermark.type === 'image' && <div>
-                <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-2">
-                  <span>{lang.watermarkSize} ({state.watermark.size ?? 100}%)</span>
-                </label>
-                <SnapRange
-                  defaultValueNumber={100}
-                  name="size"
-                  min="40"
-                  max="140"
-                  value={state.watermark.size ?? 100}
-                  onChange={handleWatermarkChange}
-                  className="w-full accent-black"
-                />
-              </div>}
-
-              <div>
-                <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-2">
-                  <span>{lang.watermarkOpacity} ({state.watermark.opacity}%)</span>
-                </label>
-                <SnapRange
-                  defaultValueNumber={50}
-                  name="opacity" 
-                  min="0" 
-                  max="100" 
-                  value={state.watermark.opacity} 
-                  onChange={handleWatermarkChange} 
-                  className="w-full accent-black"
-                />
-              </div>
+              <WatermarkAppearanceControls watermark={state.watermark} japanese={uiLanguage === 'ja'} onChange={patch => setState(previous => ({ ...previous, watermark: { ...previous.watermark, ...patch } }))} />
             </div>
           )}
         </section>

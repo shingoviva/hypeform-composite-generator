@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import { Point, Area } from 'react-easy-crop';
 import { UiLanguage } from '../App';
@@ -10,6 +10,7 @@ import {
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import { cropPhoto } from '../photoCanvas';
 import SnapRange from './SnapRange';
+import { X } from 'lucide-react';
 
 // Contain mode uses the original file without a redundant padded copy.
 
@@ -88,6 +89,13 @@ export default function ImageCropperModal({
   const [cropArea, setCropArea] = useState<Area | undefined>(initialCropArea);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    return () => { if (previous?.isConnected) previous.focus({ preventScroll: true }); };
+  }, [isOpen]);
   const imageFilterId = 'cropper-image-adjustment';
   const imageFilter = getImageFilter(imageFilterId, { exposure, vibrance });
 
@@ -121,7 +129,16 @@ export default function ImageCropperModal({
 
   return (
     <div className="cropper-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div role="dialog" aria-modal="true" aria-labelledby="crop-title" className="cropper-modal-panel bg-white rounded-lg w-full max-w-2xl shadow-2xl flex flex-col">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="crop-title" onKeyDown={event => {
+        if (event.key === 'Escape' && !saving) { event.preventDefault(); event.stopPropagation(); onClose(); }
+        if (event.key === 'Tab') {
+          const nodes = dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]');
+          const controls = (Array.from(nodes ?? []) as HTMLElement[]).filter(control => control.getClientRects().length > 0);
+          const first = controls[0], last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        }
+      }} className="cropper-modal-panel bg-white rounded-lg w-full max-w-2xl shadow-2xl flex flex-col">
         <ImageAdjustmentFilter
           id={imageFilterId}
           exposure={exposure}
@@ -130,7 +147,7 @@ export default function ImageCropperModal({
         <div className="cropper-modal-header p-4 border-b border-neutral-200 flex justify-between items-center shrink-0">
           <h3 id="crop-title" className="font-semibold text-lg">{lang.cropImage}</h3>
           <button onClick={onClose} disabled={saving} aria-label={lang.cancel} className="text-neutral-500 hover:text-black min-w-11 min-h-11">
-            ✕
+            <X size={20} className="mx-auto" />
           </button>
         </div>
         <div className="cropper-modal-stage relative w-full shrink-0 bg-neutral-900 flex items-center justify-center overflow-hidden">

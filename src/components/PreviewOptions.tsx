@@ -5,6 +5,7 @@ import { UiLanguage } from '../App';
 import NameTypographyControls from './NameTypographyControls';
 import SnapRange from './SnapRange';
 import WatermarkTypographyControls from './WatermarkTypographyControls';
+import WatermarkAppearanceControls from './WatermarkAppearanceControls';
 import { DEFAULT_COMPOSITE_MARGIN } from '../compositeLayout';
 
 interface Props {
@@ -49,8 +50,7 @@ export default function PreviewOptions({ state, setState, language, onClose, onI
         <label className="flex items-center gap-2"><input type="checkbox" checked={state.watermark.enabled} onChange={e => watermark({ enabled: e.target.checked })} className="accent-black" />{ja ? '表示' : 'Show'}</label>
         {state.watermark.type === 'text' && <label className="block">{ja ? 'テキスト' : 'Text'}<input value={state.watermark.text} onChange={e => watermark({ text: e.target.value })} className="w-full border-b border-gray-200 py-1 mt-1" /></label>}
         {state.watermark.type === 'text' && <WatermarkTypographyControls state={state} onChange={watermark} japanese={ja} />}
-        {state.watermark.type === 'image' && <label className="block">{ja ? 'サイズ' : 'Size'}<SnapRange defaultValueNumber={100} aria-label={ja ? 'ウォーターマークのサイズ' : 'Watermark size'} min="40" max="140" value={state.watermark.size ?? 100} onChange={e => watermark({ size: Number(e.target.value) })} className="w-full accent-black" /></label>}
-        <label className="block">{ja ? '濃さ' : 'Opacity'}<SnapRange defaultValueNumber={50} aria-label={ja ? 'ウォーターマークの濃さ' : 'Watermark opacity'} min="0" max="100" value={state.watermark.opacity} onChange={e => watermark({ opacity: Number(e.target.value) })} className="w-full accent-black" /></label>
+        <WatermarkAppearanceControls watermark={state.watermark} onChange={watermark} japanese={ja} />
       </div></details>
       <details className="border-t border-gray-100 pt-3"><summary className="cursor-pointer font-medium flex items-center gap-2"><Instagram size={14} />{ja ? 'Instagram用に出力' : 'Instagram export'}</summary><div className="space-y-3 mt-3">
         <span className="text-gray-500">1080 × 1350 · 4:5 · {ja ? '左・右の2枚' : 'Left + right'}</span>

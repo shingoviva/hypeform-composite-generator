@@ -4,6 +4,18 @@
 input[type='range'] { height: 28px; margin: 0; cursor: pointer; accent-color: black; }
 input[type='range']:disabled { cursor: default; }
 input[type='checkbox'] { accent-color: black; }
+.profile-form label { overflow-wrap: anywhere; font-size: 12px; color: #6b7280; }
+.profile-form label > span { font-size: inherit; }
+.profile-form h2 { color: #71717a; }
+.profile-form input[type='checkbox'], .profile-form input[type='radio'] { width: 14px; height: 14px; flex-shrink: 0; }
+.profile-form input:not([type='checkbox']):not([type='radio']):not([type='range']) { min-width: 0; }
+@media (pointer: coarse) {
+  .profile-form label:has(input[type='checkbox']),
+  .profile-form label:has(input[type='radio']),
+  #preview-options label:has(input[type='checkbox']),
+  #preview-options summary { min-height: 32px; }
+  .profile-form button, #preview-options button { min-height: 40px; }
+}
 button:focus-visible, select:focus-visible, input:focus-visible,
 summary:focus-visible, a:focus-visible {
   outline: 2px solid #555;
@@ -62,7 +74,7 @@ html, body, #root { height: 100%; margin: 0; }
 
   .cropper-modal-panel {
     max-height: calc(100dvh - 0.5rem);
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
   }
 
   .cropper-modal-header,

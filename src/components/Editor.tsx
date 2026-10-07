@@ -197,7 +197,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
         }
       } catch (error: any) {
         console.error('Export failed:', error);
-        alert(`Export failed: ${error?.message || String(error)}`);
+        alert(`${uiLanguage === 'ja' ? '出力できませんでした' : 'Export failed'}: ${error?.message || String(error)}`);
       } finally {
         setIsExporting(false);
       }
