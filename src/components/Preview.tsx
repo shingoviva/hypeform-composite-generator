@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AppState } from '../types';
 import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
+import { getNameTypography } from '../nameTypography';
 
 interface PreviewProps {
   state: AppState;
@@ -49,6 +50,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   }, []);
 
   const { profile, images } = state;
+  const nameTypography = getNameTypography(profile);
   const watermarkSize = state.watermark.size ?? 100;
   const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
   const watermarkRatio = (watermarkScale - 40) / 100;
@@ -95,8 +97,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const renderNameAndContact = () => (
     <>
       <h1 data-composite="name"
-        className={`font-sans ${((profile.name || 'NAME').trim().includes(' ') || (profile.name || 'NAME').length > 10) ? 'text-[3.2rem] leading-[0.95]' : 'text-[3.8rem] leading-[0.9]'} font-black tracking-tighter uppercase mb-2 ${profile.nameItalic ? 'italic' : ''}`}
-        style={{ fontFamily: profile.nameFont || '"Oswald", sans-serif' }}
+        className={`uppercase mb-2 ${profile.nameItalic ? 'italic' : ''}`}
+        style={{ fontFamily: nameTypography.font.family, fontWeight: nameTypography.font.weight, fontSize: nameTypography.size, letterSpacing: `${nameTypography.spacing}em`, lineHeight: 1.15, overflowWrap: 'anywhere', padding: '2px 6px', fontKerning: 'normal' }}
       >
         {profile.name || 'NAME'}
       </h1>

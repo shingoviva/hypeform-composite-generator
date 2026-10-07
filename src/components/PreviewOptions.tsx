@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { X, Instagram } from 'lucide-react';
 import { AppState, ProfileData } from '../types';
 import { UiLanguage } from '../App';
+import NameTypographyControls from './NameTypographyControls';
 
 interface Props {
   state: AppState;
@@ -32,13 +33,12 @@ export default function PreviewOptions({ state, setState, language, onClose, onI
   }, [onClose]);
   const profile = (patch: Partial<ProfileData>) => setState(previous => ({ ...previous, profile: { ...previous.profile, ...patch } }));
   const watermark = (patch: Partial<AppState['watermark']>) => setState(previous => ({ ...previous, watermark: { ...previous.watermark, ...patch } }));
-  const fonts = ['Oswald', 'Montserrat', 'Playfair Display', 'Inter', 'Bodoni Moda', 'Anton', 'Cormorant Garamond'];
   const visibility: [keyof ProfileData, string][] = [['showContact', ja ? '電話番号' : 'Phone'], ['showEmail', ja ? 'メール' : 'Email'], ['showNationality', ja ? '国籍' : 'Nationality'], ['showResidence', ja ? '拠点' : 'Base'], ['showExperience', ja ? '実績' : 'Experience']];
   return <section ref={panelRef} id="preview-options" aria-label={ja ? 'レイアウト調整' : 'Layout adjustments'} className="absolute top-16 right-2 z-[60] w-[288px] max-w-[calc(100%_-_1rem)] max-h-[calc(100%_-_4.5rem)] overflow-y-auto bg-white border border-gray-200 shadow-lg rounded-lg p-4 text-xs">
     <div className="flex justify-between items-center mb-3"><h2 className="font-bold">{ja ? 'レイアウト調整' : 'Layout adjustments'}</h2><button onClick={onClose} aria-label={ja ? '調整を閉じる' : 'Close adjustments'} className="p-2"><X size={16} /></button></div>
     <div className="space-y-3">
       <label className="flex items-center justify-between gap-2"><span>{ja ? '名前の位置' : 'Name position'}</span><select value={state.profile.nameAtBottom ? 'bottom' : 'top'} onChange={e => profile({ nameAtBottom: e.target.value === 'bottom' })} className="border-b border-gray-200 bg-white py-1"><option value="top">{ja ? '上' : 'Top'}</option><option value="bottom">{ja ? '下' : 'Bottom'}</option></select></label>
-      <label className="flex items-center justify-between gap-2"><span>{ja ? '書体' : 'Typeface'}</span><select aria-label={ja ? '名前の書体' : 'Name typeface'} value={state.profile.nameFont || '"Oswald", sans-serif'} onChange={e => profile({ nameFont: e.target.value })} className="max-w-40 border-b border-gray-200 bg-white py-1">{fonts.map(font => <option key={font} value={`"${font}", ${['Playfair Display', 'Bodoni Moda', 'Cormorant Garamond'].includes(font) ? 'serif' : 'sans-serif'}`}>{font}</option>)}</select></label>
+      <NameTypographyControls profile={state.profile} onChange={profile} japanese={ja} />
       <label className="flex items-center gap-2"><input type="checkbox" checked={!!state.profile.nameItalic} onChange={e => profile({ nameItalic: e.target.checked })} className="accent-black" />{ja ? '斜体' : 'Italic'}</label>
       <details className="border-t border-gray-100 pt-3"><summary className="cursor-pointer font-medium">{ja ? '表示する情報' : 'Visible information'}</summary><div className="grid grid-cols-2 gap-3 mt-3">{visibility.map(([key, label]) => <label key={key} className="flex items-center gap-2"><input type="checkbox" checked={!!state.profile[key]} onChange={e => profile({ [key]: e.target.checked })} className="accent-black" />{label}</label>)}</div></details>
       <details className="border-t border-gray-100 pt-3"><summary className="cursor-pointer font-medium">{ja ? 'ウォーターマーク' : 'Watermark'}</summary><div className="space-y-3 mt-3">

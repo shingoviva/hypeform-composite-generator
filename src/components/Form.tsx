@@ -3,6 +3,7 @@ import { AppState, ProfileData } from '../types';
 import { UiLanguage } from '../App';
 import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
+import NameTypographyControls from './NameTypographyControls';
 
 interface FormProps {
   state: AppState;
@@ -221,16 +222,8 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   />
                   <span className="text-[10px] text-gray-500">{lang.italic}</span>
                 </label>
-                <select name="nameFont" value={state.profile.nameFont || '"Oswald", sans-serif'} onChange={handleProfileChange} className="text-[10px] text-gray-500 bg-transparent border-b border-gray-200 outline-none cursor-pointer">
-                  <option value='"Oswald", sans-serif'>Oswald</option>
-                  <option value='"Montserrat", sans-serif'>Montserrat</option>
-                  <option value='"Playfair Display", serif'>Playfair Display</option>
-                  <option value='"Inter", sans-serif'>Inter</option>
-                  <option value='"Anton", sans-serif'>Anton</option>
-                  <option value='"Bodoni Moda", serif'>Bodoni Moda</option>
-                  <option value='"Cormorant Garamond", serif'>Cormorant Garamond</option>
-                </select>
               </div>
+              <NameTypographyControls profile={state.profile} japanese={uiLanguage === 'ja'} onChange={patch => setState(previous => ({ ...previous, profile: { ...previous.profile, ...patch } }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

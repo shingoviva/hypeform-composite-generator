@@ -1,6 +1,8 @@
 export interface ProfileData {
   name: string;
   nameFont?: string;
+  nameSize?: number;
+  nameSpacing?: number;
   nameItalic?: boolean;
   nameAtBottom?: boolean;
   contact: string;

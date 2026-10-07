@@ -1,4 +1,5 @@
 import { AppState } from './types';
+import { getNameTypography } from './nameTypography';
 
 export function layoutInstagram(target: HTMLElement, state: AppState, side: 'left' | 'right') {
   const document = target.ownerDocument;
@@ -14,7 +15,8 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   const watermark = get('watermark');
   const header = document.createElement('div');
   header.style.cssText = 'flex-shrink:0;text-align:center';
-  name.style.cssText += `;font-size:${side === 'left' ? 68 : 48}px;line-height:1.05;letter-spacing:0;margin:0 0 12px;overflow-wrap:anywhere`;
+  const typography = getNameTypography(state.profile);
+  name.style.cssText += `;font-size:${typography.size / typography.defaultSize * (side === 'left' ? 68 : 48)}px;line-height:1.15;letter-spacing:${typography.spacing}em;margin:0 0 12px;overflow-wrap:anywhere`;
   header.append(name);
   if (side === 'left' && contact) {
     contact.style.cssText = 'font-size:14px;line-height:1.5;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;white-space:normal;overflow-wrap:anywhere';
