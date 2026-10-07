@@ -35,6 +35,9 @@ export interface ImageData {
   fitMode?: 'cover' | 'contain';
   exposure?: number;
   vibrance?: number;
+  crop?: { x: number; y: number };
+  zoom?: number;
+  cropArea?: { x: number; y: number; width: number; height: number };
 }
 
 export interface WatermarkData {

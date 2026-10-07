@@ -146,10 +146,19 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
     }));
   };
 
-  const handleWatermarkFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleWatermarkFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+      } catch {
+        URL.revokeObjectURL(url);
+        alert(uiLanguage === 'ja' ? '画像を読み込めません。JPEGまたはPNGを選んでください。' : 'Unable to open this image. Please choose a JPEG or PNG.');
+        return;
+      }
       setState(prev => ({
         ...prev,
         watermark: {
@@ -328,14 +337,15 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
             <div>
               <label className="block text-[10px] uppercase text-gray-400 mb-2">{lang.mainPhoto}</label>
               <button 
+                aria-label={lang.mainPhoto}
                 onClick={() => onImageClick('main')}
                 className="w-full aspect-[3/4] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-2"
               >
                 {state.images.main.croppedUrl ? (
                   state.images.main.fitMode === 'contain' ? (
-                    <img src={state.images.main.originalUrl || state.images.main.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('form-image-adjustment-main') }} />
+                    <img src={state.images.main.originalUrl || state.images.main.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('form-image-adjustment-main', state.images.main) }} />
                   ) : (
-                    <img src={state.images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('form-image-adjustment-main') }} />
+                    <img src={state.images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('form-image-adjustment-main', state.images.main) }} />
                   )
                 ) : (
                   <span className="text-xs text-gray-400">+</span>
@@ -361,14 +371,15 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   return (
                     <div key={key} className="flex flex-col">
                       <button 
+                        aria-label={`${lang.subPhotos} ${key.slice(-1)}`}
                         onClick={() => onImageClick(key)}
                         className="w-full aspect-[3/4] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-1"
                       >
                         {image.croppedUrl ? (
                           image.fitMode === 'contain' ? (
-                            <img src={image.originalUrl || image.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`) }} />
+                            <img src={image.originalUrl || image.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`, image) }} />
                           ) : (
-                            <img src={image.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`) }} />
+                            <img src={image.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter(`form-image-adjustment-${image.id}`, image) }} />
                           )
                         ) : (
                           <span className="text-xs text-gray-400">+</span>

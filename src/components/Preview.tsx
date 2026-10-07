@@ -162,14 +162,14 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               <div className="flex w-full gap-12 flex-1 min-h-0">
                 <div className="w-[49%] flex flex-col">
                   <div 
-                    className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                    className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                     onClick={() => onImageClick('main')}
                   >
                     {images.main.croppedUrl ? (
                       images.main.fitMode === 'contain' ? (
-                        <img src={images.main.originalUrl || images.main.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main') }} alt="Main composite" />
+                        <img src={images.main.originalUrl || images.main.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                       ) : (
-                        <img src={images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-main') }} alt="Main composite" />
+                        <img src={images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                       )
                     ) : (
                       <MainImagePlaceholder />
@@ -180,50 +180,50 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 <div className="w-[51%] flex flex-col">
                   <div className="grid grid-cols-2 grid-rows-2 gap-[14px] w-full h-full">
                     <div 
-                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                       onClick={() => onImageClick('sub1')}
                     >
                       {images.sub1.croppedUrl ? (
                         images.sub1.fitMode === 'contain' ? (
-                          <img src={images.sub1.originalUrl || images.sub1.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1') }} alt="Sub 1" />
+                          <img src={images.sub1.originalUrl || images.sub1.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                         ) : (
-                          <img src={images.sub1.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub1') }} alt="Sub 1" />
+                          <img src={images.sub1.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                         )
                       ) : <SubImagePlaceholder index={1} />}
                     </div>
                     <div 
-                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                       onClick={() => onImageClick('sub2')}
                     >
                       {images.sub2.croppedUrl ? (
                         images.sub2.fitMode === 'contain' ? (
-                          <img src={images.sub2.originalUrl || images.sub2.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2') }} alt="Sub 2" />
+                          <img src={images.sub2.originalUrl || images.sub2.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                         ) : (
-                          <img src={images.sub2.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub2') }} alt="Sub 2" />
+                          <img src={images.sub2.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                         )
                       ) : <SubImagePlaceholder index={2} />}
                     </div>
                     <div 
-                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                       onClick={() => onImageClick('sub3')}
                     >
                       {images.sub3.croppedUrl ? (
                         images.sub3.fitMode === 'contain' ? (
-                          <img src={images.sub3.originalUrl || images.sub3.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3') }} alt="Sub 3" />
+                          <img src={images.sub3.originalUrl || images.sub3.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                         ) : (
-                          <img src={images.sub3.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub3') }} alt="Sub 3" />
+                          <img src={images.sub3.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                         )
                       ) : <SubImagePlaceholder index={3} />}
                     </div>
                     <div 
-                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                      className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                       onClick={() => onImageClick('sub4')}
                     >
                       {images.sub4.croppedUrl ? (
                         images.sub4.fitMode === 'contain' ? (
-                          <img src={images.sub4.originalUrl || images.sub4.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4') }} alt="Sub 4" />
+                          <img src={images.sub4.originalUrl || images.sub4.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                         ) : (
-                          <img src={images.sub4.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub4') }} alt="Sub 4" />
+                          <img src={images.sub4.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                         )
                       ) : <SubImagePlaceholder index={4} />}
                     </div>
@@ -250,14 +250,14 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               </div>
               
               <div 
-                className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                 onClick={() => onImageClick('main')}
               >
                 {images.main.croppedUrl ? (
                   images.main.fitMode === 'contain' ? (
-                    <img src={images.main.originalUrl || images.main.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main') }} alt="Main composite" />
+                    <img src={images.main.originalUrl || images.main.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                   ) : (
-                    <img src={images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-main') }} alt="Main composite" />
+                    <img src={images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                   )
                 ) : (
                   <MainImagePlaceholder />
@@ -269,50 +269,50 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
             <div className="w-[51%] h-full flex flex-col pb-1">
               <div className="grid grid-cols-2 grid-rows-2 gap-[14px] flex-1 min-h-0">
                 <div 
-                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                   onClick={() => onImageClick('sub1')}
                 >
                   {images.sub1.croppedUrl ? (
                     images.sub1.fitMode === 'contain' ? (
-                      <img src={images.sub1.originalUrl || images.sub1.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1') }} alt="Sub 1" />
+                      <img src={images.sub1.originalUrl || images.sub1.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                     ) : (
-                      <img src={images.sub1.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub1') }} alt="Sub 1" />
+                      <img src={images.sub1.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                     )
                   ) : <SubImagePlaceholder index={1} />}
                 </div>
                 <div 
-                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                   onClick={() => onImageClick('sub2')}
                 >
                   {images.sub2.croppedUrl ? (
                     images.sub2.fitMode === 'contain' ? (
-                      <img src={images.sub2.originalUrl || images.sub2.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2') }} alt="Sub 2" />
+                      <img src={images.sub2.originalUrl || images.sub2.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                     ) : (
-                      <img src={images.sub2.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub2') }} alt="Sub 2" />
+                      <img src={images.sub2.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                     )
                   ) : <SubImagePlaceholder index={2} />}
                 </div>
                 <div 
-                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                   onClick={() => onImageClick('sub3')}
                 >
                   {images.sub3.croppedUrl ? (
                     images.sub3.fitMode === 'contain' ? (
-                      <img src={images.sub3.originalUrl || images.sub3.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3') }} alt="Sub 3" />
+                      <img src={images.sub3.originalUrl || images.sub3.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                     ) : (
-                      <img src={images.sub3.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub3') }} alt="Sub 3" />
+                      <img src={images.sub3.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                     )
                   ) : <SubImagePlaceholder index={3} />}
                 </div>
                 <div 
-                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer hover:opacity-90 transition-opacity"
+                  className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                   onClick={() => onImageClick('sub4')}
                 >
                   {images.sub4.croppedUrl ? (
                     images.sub4.fitMode === 'contain' ? (
-                      <img src={images.sub4.originalUrl || images.sub4.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4') }} alt="Sub 4" />
+                      <img src={images.sub4.originalUrl || images.sub4.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                     ) : (
-                      <img src={images.sub4.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub4') }} alt="Sub 4" />
+                      <img src={images.sub4.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                     )
                   ) : <SubImagePlaceholder index={4} />}
                 </div>

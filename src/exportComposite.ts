@@ -1,0 +1,105 @@
+import html2canvas from 'html2canvas';
+import { AppState } from './types';
+import { getProtectedExposureTable, getVibranceAmount } from './imageAdjustments';
+import { photoContext } from './photoCanvas';
+
+async function preparePhoto(element: HTMLImageElement, state: AppState) {
+  await element.decode();
+  const photo = Object.values(state.images).find(image =>
+    element.style.filter.includes(`preview-image-adjustment-${image.id}`));
+  if (!photo || (!photo.exposure && !photo.vibrance)) {
+    const blob = await (await fetch(element.src)).blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('Unable to read photo'));
+      reader.readAsDataURL(blob);
+    });
+  }
+  const canvas = document.createElement('canvas');
+  // Bound intermediate images to avoid exhausting mobile Safari's canvas memory.
+  const ratio = Math.min(1, 2200 / Math.max(element.naturalWidth, element.naturalHeight));
+  canvas.width = Math.max(1, Math.round(element.naturalWidth * ratio));
+  canvas.height = Math.max(1, Math.round(element.naturalHeight * ratio));
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Image processing unavailable');
+  context.drawImage(element, 0, 0, canvas.width, canvas.height);
+  if (photo && (photo.exposure || photo.vibrance)) {
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const table = getProtectedExposureTable(photo.exposure).split(' ').map(Number);
+    const saturation = getVibranceAmount(photo.vibrance);
+    const tone = (value: number) => {
+      const position = value / 255 * 32;
+      const lower = Math.floor(position);
+      return table[lower] + ((table[Math.min(lower + 1, 32)] - table[lower]) * (position - lower));
+    };
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      const r = tone(pixels.data[i]);
+      const g = tone(pixels.data[i + 1]);
+      const b = tone(pixels.data[i + 2]);
+      const gray = .213 * r + .715 * g + .072 * b;
+      pixels.data[i] = (gray + saturation * (r - gray)) * 255;
+      pixels.data[i + 1] = (gray + saturation * (g - gray)) * 255;
+      pixels.data[i + 2] = (gray + saturation * (b - gray)) * 255;
+    }
+    context.putImageData(pixels, 0, 0);
+  }
+  const result = canvas.toDataURL('image/png');
+  canvas.width = canvas.height = 0;
+  return result;
+}
+
+export async function renderComposite(element: HTMLElement, state: AppState, highResolution: boolean, format: 'pdf' | 'jpeg' = 'pdf') {
+  await document.fonts.ready;
+  const photos: string[] = [];
+  for (const image of Array.from(element.querySelectorAll('img'))) {
+    photos.push(await preparePhoto(image, state));
+  }
+  const output = document.createElement('canvas');
+  const scale = highResolution ? 3 : 2;
+  output.width = 1123 * scale;
+  output.height = 794 * scale;
+  // JPEG retains P3 on supporting browsers; jsPDF's DeviceRGB output uses sRGB.
+  photoContext(output, format === 'jpeg');
+  return html2canvas(element, {
+    canvas: output,
+    backgroundColor: '#ffffff',
+    scale,
+    width: 1123,
+    height: 794,
+    windowWidth: 1280,
+    windowHeight: 1000,
+    logging: false,
+    onclone: async (documentClone) => {
+      const target = documentClone.getElementById('composite-canvas')!;
+      // Remove the preview scale and hidden mobile tab from the export layout.
+      documentClone.body.replaceChildren(target);
+      target.style.cssText += ';position:relative;transform:none;margin:0;box-shadow:none';
+      // Tailwind 4 uses modern colors that html2canvas cannot parse directly.
+      const colorCanvas = document.createElement('canvas');
+      colorCanvas.width = colorCanvas.height = 1;
+      const colorContext = colorCanvas.getContext('2d')!;
+      for (const node of [target, ...Array.from(target.querySelectorAll<HTMLElement>('*'))]) {
+        const computed = documentClone.defaultView!.getComputedStyle(node);
+        for (const property of ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'text-decoration-color']) {
+          const value = computed.getPropertyValue(property);
+          if (/oklch|oklab|color\(|lab\(|lch\(/.test(value)) {
+            colorContext.clearRect(0, 0, 1, 1);
+            colorContext.fillStyle = value;
+            colorContext.fillRect(0, 0, 1, 1);
+            const [r, g, b, a] = colorContext.getImageData(0, 0, 1, 1).data;
+            node.style.setProperty(property, `rgba(${r},${g},${b},${a / 255})`);
+          }
+        }
+      }
+      target.querySelectorAll('svg').forEach(svg => svg.remove());
+      const images = Array.from(target.querySelectorAll('img'));
+      for (let i = 0; i < images.length; i++) {
+        images[i].src = photos[i];
+        images[i].removeAttribute('srcset');
+        images[i].style.filter = 'none';
+        await images[i].decode();
+      }
+    }
+  });
+}

@@ -7,6 +7,21 @@
   --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
+html, body, #root { height: 100%; margin: 0; }
+.app-shell { height: 100vh; height: var(--app-height, 100dvh); }
+
+@media (max-width: 1023px) {
+  input:not([type='range']):not([type='checkbox']):not([type='radio']), select, textarea {
+    font-size: 16px;
+  }
+  input[type='range'] { min-height: 32px; touch-action: pan-y; }
+  .cropper-control-label { flex-shrink: 0; }
+  .cropper-modal-overlay {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
 .cropper-modal-overlay {
   padding: 1rem;
   overflow-y: auto;

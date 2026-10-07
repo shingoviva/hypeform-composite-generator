@@ -19,7 +19,8 @@ export function getVibranceAmount(vibrance = DEFAULT_VIBRANCE): number {
   return Math.max(0, 1 + vibrance / 100);
 }
 
-export function getImageFilter(filterId: string): string {
+export function getImageFilter(filterId: string, image?: Pick<ImageData, 'exposure' | 'vibrance'>): string {
+  if (image && !image.exposure && !image.vibrance) return 'none';
   return `url(#${filterId})`;
 }
 

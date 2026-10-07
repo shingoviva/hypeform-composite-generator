@@ -8,119 +8,30 @@ import {
   getImageFilter
 } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
+import { cropPhoto } from '../photoCanvas';
 
-// Helper to extract image
-const createImage = (url: string): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const image = new Image();
-    image.addEventListener('load', () => resolve(image));
-    image.addEventListener('error', (error) => reject(error));
-    image.src = url;
-  });
-
-async function getCroppedImg(
-  imageSrc: string,
-  pixelCrop: Area,
-  fitMode: 'cover' | 'contain' = 'cover',
-  aspectRatio: number = 1
-): Promise<string> {
-  const image = await createImage(imageSrc);
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-
-  if (!ctx) {
-    throw new Error('No 2d context');
-  }
-
-  if (fitMode === 'contain') {
-    // Generate a padded white background image
-    let canvasWidth, canvasHeight;
-    const imgAspect = image.width / image.height;
-    
-    if (imgAspect > aspectRatio) {
-      canvasWidth = image.width;
-      canvasHeight = image.width / aspectRatio;
-    } else {
-      canvasHeight = image.height;
-      canvasWidth = image.height * aspectRatio;
-    }
-    
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    
-    const dx = (canvasWidth - image.width) / 2;
-    const dy = (canvasHeight - image.height) / 2;
-    ctx.drawImage(image, dx, dy, image.width, image.height);
-    
-    return new Promise((resolve, reject) => {
-      canvas.toBlob((file) => {
-        if (file) {
-          resolve(URL.createObjectURL(file));
-        } else {
-          reject(new Error('Canvas is empty'));
-        }
-      }, 'image/jpeg');
-    });
-  }
-
-  // Cover mode (default cropping)
-  // set canvas size to match the bounding box
-  canvas.width = image.width;
-  canvas.height = image.height;
-
-  // draw image
-  ctx.drawImage(image, 0, 0);
-
-  // cropped area
-  const croppedCanvas = document.createElement('canvas');
-  const croppedCtx = croppedCanvas.getContext('2d');
-
-  if (!croppedCtx) {
-    throw new Error('No 2d context');
-  }
-
-  croppedCanvas.width = pixelCrop.width;
-  croppedCanvas.height = pixelCrop.height;
-
-  croppedCtx.drawImage(
-    canvas,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    pixelCrop.width,
-    pixelCrop.height
-  );
-
-  return new Promise((resolve, reject) => {
-    croppedCanvas.toBlob((file) => {
-      if (file) {
-        resolve(URL.createObjectURL(file));
-      } else {
-        reject(new Error('Canvas is empty'));
-      }
-    }, 'image/jpeg');
-  });
-}
+// Contain mode uses the original file without a redundant padded copy.
 
 interface ImageCropperModalProps {
+  key?: React.Key;
   isOpen: boolean;
   imageUrl: string;
   aspectRatio: number;
   initialFitMode?: 'cover' | 'contain';
   initialExposure?: number;
   initialVibrance?: number;
+  initialCrop?: Point;
+  initialZoom?: number;
+  initialCropArea?: Area;
   onClose: () => void;
   onCropComplete: (
     croppedUrl: string,
     fitMode: 'cover' | 'contain',
     exposure: number,
-    vibrance: number
+    vibrance: number,
+    crop: Point,
+    zoom: number,
+    cropArea?: Area
   ) => void;
   onChangeImage: () => void;
   uiLanguage: UiLanguage;
@@ -158,36 +69,49 @@ export default function ImageCropperModal({
   initialFitMode = 'cover',
   initialExposure = DEFAULT_EXPOSURE,
   initialVibrance = DEFAULT_VIBRANCE,
+  initialCrop = { x: 0, y: 0 },
+  initialZoom = 1,
+  initialCropArea,
   onClose,
   onCropComplete,
   onChangeImage,
   uiLanguage
 }: ImageCropperModalProps) {
   const lang = t[uiLanguage];
-  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  const [crop, setCrop] = useState<Point>(initialCrop);
+  const [zoom, setZoom] = useState(initialZoom);
   const [fitMode, setFitMode] = useState<'cover' | 'contain'>(initialFitMode);
   const [exposure, setExposure] = useState(initialExposure);
   const [vibrance, setVibrance] = useState(initialVibrance);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [cropArea, setCropArea] = useState<Area | undefined>(initialCropArea);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const imageFilterId = 'cropper-image-adjustment';
-  const imageFilter = getImageFilter(imageFilterId);
+  const imageFilter = getImageFilter(imageFilterId, { exposure, vibrance });
 
-  const handleCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+  const handleCropComplete = useCallback((area: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
+    setCropArea(area);
   }, []);
 
   const handleSave = async () => {
+    if (saving) return;
     // We need croppedAreaPixels if it's cover mode.
     // If it's contain mode, getCroppedImg ignores croppedAreaPixels.
     if (croppedAreaPixels || fitMode === 'contain') {
       try {
+        setSaving(true);
+        setError('');
         // Fallback for croppedAreaPixels to make TypeScript happy if it happens to be null in contain mode
         const area = croppedAreaPixels || { x: 0, y: 0, width: 0, height: 0 };
-        const croppedImage = await getCroppedImg(imageUrl, area, fitMode, aspectRatio);
-        onCropComplete(croppedImage, fitMode, exposure, vibrance);
+        const croppedImage = fitMode === 'contain' ? imageUrl : await cropPhoto(imageUrl, area);
+        onCropComplete(croppedImage, fitMode, exposure, vibrance, crop, zoom, cropArea);
       } catch (e) {
         console.error(e);
+        setError(uiLanguage === 'ja' ? '写真を読み込めません。JPEGまたはPNGの写真を選び直してください。' : 'Unable to process this photo. Please choose a JPEG or PNG image.');
+      } finally {
+        setSaving(false);
       }
     }
   };
@@ -196,15 +120,15 @@ export default function ImageCropperModal({
 
   return (
     <div className="cropper-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="cropper-modal-panel bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col">
+      <div role="dialog" aria-modal="true" aria-labelledby="crop-title" className="cropper-modal-panel bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col">
         <ImageAdjustmentFilter
           id={imageFilterId}
           exposure={exposure}
           vibrance={vibrance}
         />
         <div className="cropper-modal-header p-4 border-b border-neutral-200 flex justify-between items-center shrink-0">
-          <h3 className="font-semibold text-lg">{lang.cropImage}</h3>
-          <button onClick={onClose} className="text-neutral-500 hover:text-black">
+          <h3 id="crop-title" className="font-semibold text-lg">{lang.cropImage}</h3>
+          <button onClick={onClose} disabled={saving} aria-label={lang.cancel} className="text-neutral-500 hover:text-black min-w-11 min-h-11">
             ✕
           </button>
         </div>
@@ -231,6 +155,7 @@ export default function ImageCropperModal({
             </div>
           ) : (
             <Cropper
+              initialCroppedAreaPercentages={initialCropArea}
               image={imageUrl}
               crop={crop}
               zoom={zoom}
@@ -252,7 +177,7 @@ export default function ImageCropperModal({
                 min={1}
                 max={3}
                 step={0.1}
-                aria-labelledby="Zoom"
+                aria-label={lang.zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
                 className="w-full accent-black disabled:opacity-50"
                 disabled={fitMode === 'contain'}
@@ -315,18 +240,19 @@ export default function ImageCropperModal({
             </div>
           </div>
           <div className="cropper-action-row flex flex-col sm:flex-row justify-between items-center w-full gap-3">
-            <button onClick={onChangeImage} className="w-full sm:w-auto px-5 py-2 rounded-lg font-medium text-black border border-black hover:bg-neutral-100 transition-colors">
+            <button onClick={onChangeImage} disabled={saving} className="w-full sm:w-auto px-5 py-2 rounded-lg font-medium text-black border border-black hover:bg-neutral-100 transition-colors">
               {lang.changeImage}
             </button>
             <div className="flex gap-3 w-full sm:w-auto">
-              <button onClick={onClose} className="flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium text-neutral-600 hover:bg-neutral-200 transition-colors text-center">
+              <button onClick={onClose} disabled={saving} className="flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium text-neutral-600 hover:bg-neutral-200 transition-colors text-center">
                 {lang.cancel}
               </button>
-              <button onClick={handleSave} className="flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium bg-black text-white hover:bg-neutral-800 transition-colors text-center">
+              <button onClick={handleSave} disabled={saving || (!croppedAreaPixels && fitMode !== 'contain')} className="flex-1 sm:flex-none px-5 py-2 rounded-lg font-medium bg-black text-white hover:bg-neutral-800 transition-colors text-center disabled:opacity-50">
                 {lang.applyCrop}
               </button>
             </div>
           </div>
+          {error && <p role="alert" className="text-sm text-red-700 mt-2">{error}</p>}
         </div>
       </div>
     </div>
