@@ -121,7 +121,7 @@ export default function ImageCropperModal({
 
   return (
     <div className="cropper-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div role="dialog" aria-modal="true" aria-labelledby="crop-title" className="cropper-modal-panel bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col">
+      <div role="dialog" aria-modal="true" aria-labelledby="crop-title" className="cropper-modal-panel bg-white rounded-lg w-full max-w-2xl shadow-2xl flex flex-col">
         <ImageAdjustmentFilter
           id={imageFilterId}
           exposure={exposure}

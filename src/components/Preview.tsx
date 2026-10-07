@@ -17,8 +17,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const A4_WIDTH = 1123;
   const A4_HEIGHT = 794;
   const WATERMARK_BOX_WIDTH = 190;
-  const WATERMARK_BOX_HEIGHT = 56;
-  const WATERMARK_MIN_HEIGHT = 24;
+  const WATERMARK_BOX_HEIGHT = 28;
+  const WATERMARK_MIN_HEIGHT = 16;
 
   useEffect(() => {
     const updateScale = () => {
@@ -256,7 +256,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 <div className="min-w-0 text-center flex flex-col justify-center overflow-hidden shrink-0" style={{ height: layout.footerHeight, width: layout.mainWidth }}>
                   {renderNameAndContact()}
                 </div>
-                <div data-composite="attributes" className={`min-w-0 text-center flex flex-col gap-1 pt-1 pb-1 overflow-hidden shrink-0 ${state.watermark.enabled ? 'justify-start' : 'justify-center'}`} style={{ width: layout.galleryWidth, height: state.watermark.enabled ? layout.footerHeight - 64 : layout.footerHeight }}>
+                <div data-composite="attributes" className={`min-w-0 text-center flex flex-col gap-1 pt-1 pb-1 overflow-hidden shrink-0 ${state.watermark.enabled ? 'justify-start' : 'justify-center'}`} style={{ width: layout.galleryWidth, height: state.watermark.enabled ? layout.footerHeight - 32 : layout.footerHeight }}>
                   {renderAttributesInfo()}
                 </div>
               </div>
@@ -339,7 +339,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               </div>
               
-              <div data-composite="attributes" className="mt-3 text-center flex flex-col justify-start gap-1 w-full pt-1 pb-1 shrink-0 overflow-hidden" style={{ height: state.watermark.enabled ? layout.footerHeight - 64 : layout.footerHeight }}>
+              <div data-composite="attributes" className="mt-3 text-center flex flex-col justify-start gap-1 w-full pt-1 pb-1 shrink-0 overflow-hidden" style={{ height: state.watermark.enabled ? layout.footerHeight - 32 : layout.footerHeight }}>
                 {renderAttributesInfo()}
               </div>
             </div>

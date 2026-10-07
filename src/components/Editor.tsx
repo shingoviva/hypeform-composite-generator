@@ -418,7 +418,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           key={tempImageUrl}
           isOpen={true}
           imageUrl={tempImageUrl}
-          aspectRatio={editingImageId === 'main' ? 3/4 : 2/3}
+          aspectRatio={4/5}
           initialFitMode={state.images[editingImageId as keyof typeof state.images]?.fitMode || 'cover'}
           initialExposure={state.images[editingImageId as keyof typeof state.images]?.exposure}
           initialVibrance={state.images[editingImageId as keyof typeof state.images]?.vibrance}

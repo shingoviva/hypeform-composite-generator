@@ -13,10 +13,13 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
     Object.assign(contact.style, { fontSize: `${bodySize}px`, lineHeight: '1.4', letterSpacing: '0', gap: '4px 8px', margin: '0', paddingBottom: '4px', flexShrink: '0' });
   }
   if (name && band?.clientHeight) {
-    let size = typography.size * (side === 'left' ? 1.25 : 1);
+    let size = 84 * (side === 'left' ? 1.25 : 1);
     Object.assign(name.style, { fontSize: `${size}px`, lineHeight: '1.15', letterSpacing: `${typography.spacing}em`, fontFamily: typography.font.family, fontWeight: String(typography.font.weight), margin: '0 0 8px', padding: '4px', flexShrink: '0' });
     // Reserve one grid unit for glyph descenders and export rasterizer differences.
     while (name.offsetHeight + (contact && band.contains(contact) ? contact.offsetHeight : 0) + 12 > band.clientHeight && size > 12) name.style.fontSize = `${--size}px`;
+    // Scale inside the safe envelope: fitting must not erase slider movement.
+    size *= .45 + .55 * (typography.size - 32) / 52;
+    name.style.fontSize = `${size}px`;
   }
   const attributes = root.querySelector<HTMLElement>('[data-composite="attributes"]');
   if (attributes) {
@@ -41,5 +44,6 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
     let size = Math.min(state.watermark.textSize ?? 31, 38, nameSize * .8);
     Object.assign(text.style, { fontFamily: font.family, fontWeight: String(font.weight), fontSize: `${size}px`, letterSpacing: `${state.watermark.textSpacing ?? font.spacing}em`, lineHeight: '1.2', padding: '4px', overflowWrap: 'anywhere' });
     while ((stamp.scrollHeight > stamp.clientHeight || stamp.scrollWidth > stamp.clientWidth) && size > 12) text.style.fontSize = `${--size}px`;
+    text.style.fontSize = `${size * (.65 + .35 * ((state.watermark.textSize ?? 31) - 16) / 22)}px`;
   }
 }

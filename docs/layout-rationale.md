@@ -11,20 +11,20 @@ The ratios below are design decisions, not scientifically proven universal beaut
 
 ## Applied Decisions
 
-- The supplied agency-card references visually approximate 3:4 main portraits and 2:3 supporting portraits. These practical ratios accommodate a head/upper-body lead image and taller fashion/full-body supporting shots.
+- The supplied agency-card references use tall portraits on near-square sheets. The application uses 4:5 frames for all five photos: a practical compromise that uses A4 landscape width more effectively, without suggesting a scientifically optimal ratio.
 - A large main image and four consistently aligned supporting shots establish hierarchy. The name defaults below the photos so it does not interrupt their upper edge.
 - A4 landscape (1123 x 794 layout units) is retained for existing PDF/JPEG workflows. This wider paper shape cannot reproduce the supplied near-square compositions exactly without either distortion, extra cropping or some horizontal white space.
 - Standard vertical inset is 28 units, adjustable from 16 to 80. Photo frames are calculated from available height, fixed portrait ratios and bounded gaps, and centered as one group. The name/footer band has a fixed height so changing type does not resize photo frames.
-- Existing crops remain intact and use `contain`; an old 4:5 crop can have small letterbox spaces in a new 3:4 / 2:3 frame. New crops use the new ratios. No saved image is silently recropped.
+- Existing crops remain intact and use `contain`; previously saved taller crops can have small letterbox spaces in the new 4:5 frames. New crops use 4:5. No saved image is silently recropped.
 - Default snap points are visible and pointer drags snap within a narrow tolerance. Keyboard arrows remain unsnapped for fine control.
 - Watermark type uses the same supported font weights and spacing catalog as model names. Text size, tracking and italics are editable, with bounded placement and separate space from profile text.
-- Instagram remains two 1080 x 1350 JPEGs. Both retain the actual source crops using `contain`; typography and watermark choices carry over. Instagram margins are independently adjustable for its portrait format.
+- Instagram remains two 1080 x 1350 JPEGs. Both retain the actual source crops using `contain`; typography and watermark choices carry over. A compact information band and a default margin of 32 prioritize photos. Instagram margins remain independently adjustable.
 
 ## Typography Rules
 
 The card uses a name / information / secondary-label hierarchy, centered photo-column alignment, a four-unit spacing grid, name leading of 1.15, information leading of 1.4, and neutral tracking for small information text. These exact numerical values are implementation choices, not scientifically established optima. Font-specific supported weights are retained. Information text starts at 10 A4 layout units and does not shrink below 8; watermark text is capped at 80% of the fitted name size so it does not supersede the model identity.
 
-Name and information bands reserve space based on visible information volume, margin and watermark presence, independently of requested name size. Requested type sizes are upper bounds and fit automatically when text would exceed the available band. The same fitting function is rerun after fonts load in preview and in the export clone. Instagram also reserves fixed name/information bands, so name-size changes do not resize photos. Watermarks align to the right photo-column edge on A4.
+Name and information bands reserve space based on visible information volume and margin, independently of name size and watermark presence. Watermarks use a compact 28-unit region, rather than reducing photos to reserve a large logo area. Names first fit a safe maximum envelope, then scale proportionally within it; slider values are displayed as percentages, not literal pixel sizes. This avoids a fitting plateau for condensed fonts such as Anton. The same fitting function is rerun after fonts load in preview and in the export clone. Instagram also reserves fixed name/information bands, so name-size changes do not resize photos. Watermarks align to the right photo-column edge on A4.
 
 NN/g's visual hierarchy guidance supports a small number of clearly differentiated text levels and consistent grid alignment: https://www.nngroup.com/articles/principles-visual-design/
 

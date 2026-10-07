@@ -334,7 +334,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
               <button 
                 aria-label={lang.mainPhoto}
                 onClick={() => onImageClick('main')}
-                className="w-full aspect-[3/4] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-2"
+                className="w-full aspect-[4/5] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-2"
               >
                 {state.images.main.croppedUrl ? (
                   state.images.main.fitMode === 'contain' ? (
@@ -368,7 +368,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                       <button 
                         aria-label={`${lang.subPhotos} ${key.slice(-1)}`}
                         onClick={() => onImageClick(key)}
-                        className="w-full aspect-[2/3] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-1"
+                        className="w-full aspect-[4/5] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-1"
                       >
                         {image.croppedUrl ? (
                           image.fitMode === 'contain' ? (

@@ -22,7 +22,7 @@ export default function NameTypographyControls({ profile, onChange, japanese, wa
         {NAME_FONTS.map(font => <option key={font.name} value={font.family}>{font.name}</option>)}
       </select>
     </label>
-    <label className="block"><span>{japanese ? '文字サイズ' : (watermark ? 'Text size' : 'Name size')}</span><span className="float-right text-gray-500 tabular-nums">{size} px</span>
+    <label className="block"><span>{japanese ? '文字サイズ' : (watermark ? 'Text size' : 'Name size')}</span><span className="float-right text-gray-500 tabular-nums">{Math.round(size / defaultSize * 100)}%</span>
       <SnapRange defaultValueNumber={defaultSize} aria-label={watermark ? (japanese ? 'ウォーターマークの文字サイズ' : 'Watermark text size') : (japanese ? '名前の文字サイズ' : 'Name size')} min={watermark ? 16 : 32} max={watermark ? 38 : 84} step="1" value={size} onChange={event => onChange({ nameSize: Number(event.target.value) })} className="w-full accent-black" />
     </label>
     <label className="block"><span>{japanese ? '文字間隔' : 'Letter spacing'}</span><span className="float-right text-gray-500 tabular-nums">{(spacing * 100).toFixed(1)}%</span>

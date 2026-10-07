@@ -5,7 +5,7 @@ import { applyCompositeTypography } from './compositeTypography';
 
 export function layoutInstagram(target: HTMLElement, state: AppState, side: 'left' | 'right') {
   const document = target.ownerDocument;
-  const margin = Math.min(100, Math.max(40, state.instagram?.margin ?? 64));
+  const margin = Math.min(100, Math.max(24, state.instagram?.margin ?? 32));
   const gap = Math.min(40, Math.max(16, state.instagram?.gap ?? 24));
   const get = (role: string) => target.querySelector<HTMLElement>(`[data-composite="${role}"]`);
   const name = get('name')!;
@@ -16,7 +16,7 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   const details = get('details')!;
   const watermark = get('watermark');
   const header = document.createElement('div');
-  header.style.cssText = `flex-shrink:0;text-align:center;height:${side === 'left' ? 144 : 104}px;display:flex;flex-direction:column;justify-content:center;overflow:hidden`;
+  header.style.cssText = `flex-shrink:0;text-align:center;height:${side === 'left' ? 96 : 64}px;display:flex;flex-direction:column;justify-content:center;overflow:hidden`;
   const typography = getNameTypography(state.profile);
   name.style.cssText += `;font-size:${typography.size / typography.defaultSize * (side === 'left' ? 68 : 48)}px;line-height:1.15;letter-spacing:${typography.spacing}em;margin:0 0 12px;overflow-wrap:anywhere`;
   header.append(name);
@@ -33,24 +33,26 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   });
   const footer = document.createElement('div');
   footer.dataset.composite = 'attributes';
-  footer.style.cssText = 'height:128px;box-sizing:border-box;overflow:hidden;flex-shrink:0;text-align:center;border-top:1px solid black;padding-top:16px;display:flex;flex-direction:column;gap:4px';
+  footer.style.cssText = 'height:96px;box-sizing:border-box;overflow:hidden;flex-shrink:0;text-align:center;padding-top:8px;display:flex;flex-direction:column;gap:4px';
   for (const node of [measurements, details]) {
     node.style.cssText = 'font-size:16px;line-height:1.5;letter-spacing:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;white-space:normal;overflow-wrap:anywhere';
     node.querySelectorAll<HTMLElement>('span').forEach(span => { span.style.whiteSpace = 'normal'; span.style.minWidth = '0'; });
     footer.append(node);
   }
   target.replaceChildren();
-  target.style.cssText = `position:relative;width:1080px;height:1350px;box-sizing:border-box;background:white;color:black;padding:${margin}px ${margin}px ${watermark ? Math.max(96, margin) : margin}px;display:flex;flex-direction:column;gap:24px;overflow:hidden`;
+  target.style.cssText = `position:relative;width:1080px;height:1350px;box-sizing:border-box;background:white;color:black;padding:${margin}px ${margin}px ${watermark ? Math.max(40, margin) : margin}px;display:flex;flex-direction:column;gap:12px;overflow:hidden`;
   if (state.profile.nameAtBottom ?? true) target.append(body, header);
   else target.append(header, body);
   if (side === 'right') target.append(footer);
   if (watermark) {
-    watermark.style.cssText = `position:absolute;bottom:24px;right:${margin}px;max-width:${1080 - margin * 2}px;max-height:56px;overflow:hidden;opacity:${state.watermark.opacity / 100};text-align:right`;
+    watermark.style.cssText = `position:absolute;bottom:8px;right:${margin}px;max-width:${1080 - margin * 2}px;max-height:28px;overflow:hidden;opacity:${state.watermark.opacity / 100};text-align:right`;
     if (state.watermark.type === 'text') {
       const text = watermark.firstElementChild as HTMLElement | null;
       if (text) text.style.cssText += ';line-height:1.3;padding:4px 0;overflow-wrap:anywhere';
     } else {
-      watermark.style.width = '190px'; watermark.style.height = '56px';
+      watermark.style.width = '190px'; watermark.style.height = '28px';
+      const image = watermark.querySelector('img');
+      if (image) image.style.maxHeight = '28px';
       watermark.style.display = 'flex'; watermark.style.alignItems = 'flex-end'; watermark.style.justifyContent = 'flex-end';
     }
     target.append(watermark);
