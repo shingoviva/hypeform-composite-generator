@@ -191,16 +191,17 @@ export default function ImageCropperModal({
               <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.zoom}</span>
               <SnapRange
                 defaultValueNumber={1}
+                snapRadius={0.004}
                 value={zoom}
                 min={1}
                 max={3}
-                step={0.1}
+                step={0.01}
                 aria-label={lang.zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
                 className="w-full accent-black disabled:opacity-50"
                 disabled={fitMode === 'contain'}
               />
-              <span className="w-11 text-right text-xs tabular-nums text-neutral-500">{zoom.toFixed(1)}x</span>
+              <span className="w-14 shrink-0 text-right text-xs tabular-nums text-neutral-500">{zoom.toFixed(2)}x</span>
             </div>
             <div className="cropper-control-row flex items-center gap-3">
               <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.exposure}</span>
