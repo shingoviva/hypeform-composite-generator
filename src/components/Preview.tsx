@@ -17,9 +17,9 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const [scale, setScale] = useState(1);
   const A4_WIDTH = 1123;
   const A4_HEIGHT = 794;
-  const WATERMARK_BOX_WIDTH = 190;
-  const WATERMARK_BOX_HEIGHT = 28;
-  const WATERMARK_MIN_HEIGHT = 16;
+  const WATERMARK_BOX_WIDTH = 160;
+  const WATERMARK_BOX_HEIGHT = 32;
+  const WATERMARK_MIN_HEIGHT = 32 * 40 / 140;
 
   useEffect(() => {
     const updateScale = () => {
@@ -57,7 +57,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const nameAtBottom = profile.nameAtBottom ?? true;
   const watermarkFont = NAME_FONTS.find(font => font.family === state.watermark.font) || NAME_FONTS[0];
   const layoutStyle: React.CSSProperties = {
-    position: 'absolute', width: layout.width, height: A4_HEIGHT - layout.margin * 2,
+    position: 'absolute', zIndex: 1, width: layout.width, height: A4_HEIGHT - layout.margin * 2,
     left: (A4_WIDTH - layout.width) / 2, top: layout.margin,
   };
   useLayoutEffect(() => {
@@ -259,7 +259,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 <div className="min-w-0 text-center flex flex-col justify-center overflow-hidden shrink-0" style={{ height: layout.footerHeight, width: layout.mainWidth }}>
                   {renderNameAndContact()}
                 </div>
-                <div data-composite="attributes" className={`min-w-0 text-center flex flex-col gap-1 pt-1 pb-1 overflow-hidden shrink-0 ${state.watermark.enabled ? 'justify-start' : 'justify-center'}`} style={{ width: layout.galleryWidth, height: state.watermark.enabled ? layout.footerHeight - 32 : layout.footerHeight }}>
+                <div data-composite="attributes" className="min-w-0 text-center flex flex-col gap-1 pt-1 pb-1 overflow-hidden shrink-0 justify-start" style={{ width: layout.galleryWidth, height: layout.footerHeight }}>
                   {renderAttributesInfo()}
                 </div>
               </div>
@@ -342,7 +342,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               </div>
               
-              <div data-composite="attributes" className="mt-3 text-center flex flex-col justify-start gap-1 w-full pt-1 pb-1 shrink-0 overflow-hidden" style={{ height: state.watermark.enabled ? layout.footerHeight - 32 : layout.footerHeight }}>
+              <div data-composite="attributes" className="mt-3 text-center flex flex-col justify-start gap-1 w-full pt-1 pb-1 shrink-0 overflow-hidden" style={{ height: layout.footerHeight }}>
                 {renderAttributesInfo()}
               </div>
             </div>
@@ -352,16 +352,16 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
           {state.watermark.enabled && (
             <div 
-              data-composite="watermark" className={`absolute bottom-6 right-6 pointer-events-none z-50 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
+              data-composite="watermark" className={`absolute pointer-events-none z-0 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
               style={{
                 opacity: state.watermark.opacity / 100,
-                right: (A4_WIDTH - layout.width) / 2,
-                bottom: layout.margin,
-                maxWidth: layout.galleryWidth,
-                maxHeight: WATERMARK_BOX_HEIGHT,
+                right: 12,
+                bottom: 4,
+                maxWidth: 240,
+                maxHeight: state.watermark.type === 'image' ? WATERMARK_BOX_HEIGHT : 44,
                 overflow: state.watermark.type === 'image' ? 'hidden' : 'visible',
                 width: state.watermark.type === 'image' ? WATERMARK_BOX_WIDTH : undefined,
-                height: WATERMARK_BOX_HEIGHT,
+                height: state.watermark.type === 'image' ? WATERMARK_BOX_HEIGHT : 44,
               }}
             >
               {state.watermark.type === 'text' && state.watermark.text && (

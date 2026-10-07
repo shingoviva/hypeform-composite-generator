@@ -40,7 +40,8 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
     footer.append(node);
   }
   target.replaceChildren();
-  target.style.cssText = `position:relative;width:1080px;height:1350px;box-sizing:border-box;background:white;color:black;padding:${margin}px ${margin}px ${watermark ? Math.max(40, margin) : margin}px;display:flex;flex-direction:column;gap:12px;overflow:hidden`;
+  target.style.cssText = `position:relative;isolation:isolate;width:1080px;height:1350px;box-sizing:border-box;background:white;color:black;padding:${margin}px;display:flex;flex-direction:column;gap:12px;overflow:hidden`;
+  for (const layer of [body, header, footer]) Object.assign(layer.style, { position: 'relative', zIndex: '1' });
   if (state.profile.nameAtBottom ?? true) target.append(body, header);
   else target.append(header, body);
   if (side === 'right') target.append(footer);
