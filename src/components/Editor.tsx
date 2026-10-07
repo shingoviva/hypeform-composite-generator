@@ -253,9 +253,8 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
       {/* Left Sidebar */}
       <aside className={`${mobileTab === 'edit' ? 'flex' : 'hidden'} lg:flex w-full lg:w-80 flex-1 min-h-0 lg:flex-none lg:h-full bg-white lg:border-r lg:border-[#E5E5E5] flex-col z-10 relative`}>
         <div className="p-6 border-b border-[#E5E5E5] shrink-0 flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tighter uppercase">Composite Studio</h1>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Professional Series v1.0</p>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold leading-snug">Hypeform{' '}<span className="block text-sm font-semibold">Composite Generator</span></h1>
           </div>
           <select 
             value={uiLanguage}
@@ -333,7 +332,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
         </div>
         
         <footer className="h-8 bg-black text-white hidden md:flex items-center px-6 text-[9px] uppercase tracking-widest shrink-0 relative z-10">
-           <span>Composite Studio Professional</span>
+           <span>Hypeform Composite Generator</span>
            <span className="mx-4 text-gray-600">|</span>
            <span>A4 Standard Rendering Engine</span>
            <span className="ml-auto">Resolution: 300 DPI</span>

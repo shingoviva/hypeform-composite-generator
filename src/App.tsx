@@ -109,7 +109,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4 font-sans text-neutral-900">
         <form onSubmit={handleLogin} className="bg-white p-8 rounded-2xl shadow-sm border border-neutral-200 w-full max-w-sm">
-          <h1 className="text-2xl font-bold mb-2 text-center">Hypeform</h1>
+          <h1 className="text-xl font-bold mb-2 text-center">Hypeform Composite Generator</h1>
           <p className="text-neutral-500 text-sm mb-6 text-center">Enter the access password to open the composite generator.</p>
           
           <div className="space-y-4">
