@@ -4,6 +4,7 @@ import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import { getNameTypography, NAME_FONTS } from '../nameTypography';
 import { getCompositeLayout } from '../compositeLayout';
+import { applyCompositeTypography } from '../compositeTypography';
 
 interface PreviewProps {
   state: AppState;
@@ -50,7 +51,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
   const { profile, images } = state;
   const nameTypography = getNameTypography(profile);
-  const layout = getCompositeLayout(state.compositeMargin);
+  const detailLength = [profile.hair, profile.eyes, profile.showNationality ? profile.nationality : '', profile.showResidence ? profile.residence : '', ...(profile.showExperience ? [profile.experience, profile.experience2, profile.experience3, profile.experience4] : [])].join(' ').length;
+  const layout = getCompositeLayout(state.compositeMargin, state.watermark.enabled, detailLength);
   const nameAtBottom = profile.nameAtBottom ?? true;
   const watermarkFont = NAME_FONTS.find(font => font.family === state.watermark.font) || NAME_FONTS[0];
   const layoutStyle: React.CSSProperties = {
@@ -64,46 +66,14 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
       const name = containerRef.current?.querySelector<HTMLElement>('[data-composite="name"]');
       const band = name?.parentElement;
       if (!name || !band || !band.clientHeight) return;
-      name.style.fontSize = `${nameTypography.size}px`;
-      // Typography must fit its reserved band without resizing the photo frames.
-      let size = nameTypography.size;
-      const contact = band.querySelector<HTMLElement>('[data-composite="contact"]');
-      while (name.offsetHeight + (contact?.offsetHeight ?? 0) + 16 > band.clientHeight && size > 12) {
-        name.style.fontSize = `${--size}px`;
-      }
+      const root = containerRef.current?.querySelector<HTMLElement>('#composite-canvas');
+      if (root) applyCompositeTypography(root, state);
     };
     fitName();
     document.fonts.ready.then(fitName);
     document.fonts.addEventListener('loadingdone', fitName);
     return () => { active = false; document.fonts.removeEventListener('loadingdone', fitName); };
-  }, [profile, nameTypography.size, nameTypography.spacing]);
-  useLayoutEffect(() => {
-    let active = true;
-    const fit = () => {
-      if (!active) return;
-      const stamp = containerRef.current?.querySelector<HTMLElement>('[data-composite="watermark"]');
-      const text = state.watermark.type === 'text' ? stamp?.firstElementChild as HTMLElement | null : null;
-      if (stamp && text) {
-        let size = Math.min(38, Math.max(16, state.watermark.textSize ?? 31));
-        text.style.fontSize = `${size}px`;
-        while ((stamp.scrollHeight > stamp.clientHeight || stamp.scrollWidth > stamp.clientWidth) && size > 12) text.style.fontSize = `${--size}px`;
-      }
-      const attributes = containerRef.current?.querySelector<HTMLElement>('[data-composite="attributes"]');
-      if (attributes) {
-        const blocks = attributes.querySelectorAll<HTMLElement>('[data-composite]');
-        let size = 8.32;
-        blocks.forEach(block => { block.style.fontSize = `${size}px`; });
-        while (attributes.scrollHeight > attributes.clientHeight && size > 6.5) {
-          size -= 0.2;
-          blocks.forEach(block => { block.style.fontSize = `${size}px`; });
-        }
-      }
-    };
-    fit();
-    document.fonts.ready.then(fit);
-    document.fonts.addEventListener('loadingdone', fit);
-    return () => { active = false; document.fonts.removeEventListener('loadingdone', fit); };
-  }, [profile, state.watermark, state.compositeMargin]);
+  }, [state]);
   const watermarkSize = state.watermark.size ?? 100;
   const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
   const watermarkRatio = (watermarkScale - 40) / 100;
@@ -157,12 +127,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
       </h1>
       {contactParts.length > 0 && (
         <p data-composite="contact" className="font-sans text-[0.6rem] font-bold tracking-normal uppercase flex flex-wrap justify-center gap-x-1.5 gap-y-1 whitespace-normal break-words shrink-0" style={{ lineHeight: 1.5, paddingBottom: 4 }}>
-          {contactParts.map((part, idx) => (
-            <React.Fragment key={idx}>
-              <span>{part}</span>
-              {idx < contactParts.length - 1 && <span className="text-gray-400">|</span>}
-            </React.Fragment>
-          ))}
+          {contactParts.map(part => <span key={part}>{part}</span>)}
         </p>
       )}
     </>
@@ -287,11 +252,11 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               </div>
 
-              <div className="flex w-full shrink-0 items-start" style={{ height: 100, gap: layout.columnGap, marginTop: 12 }}>
-                <div className="min-w-0 text-center flex flex-col justify-center overflow-hidden shrink-0" style={{ height: 100, width: layout.mainWidth }}>
+              <div className="flex w-full shrink-0 items-start" style={{ height: layout.footerHeight, gap: layout.columnGap, marginTop: 12 }}>
+                <div className="min-w-0 text-center flex flex-col justify-center overflow-hidden shrink-0" style={{ height: layout.footerHeight, width: layout.mainWidth }}>
                   {renderNameAndContact()}
                 </div>
-                <div data-composite="attributes" className={`min-w-0 text-center flex flex-col gap-1.5 pt-3 pb-1 overflow-hidden shrink-0 ${state.watermark.enabled ? 'justify-start' : 'justify-center'}`} style={{ width: layout.galleryWidth, height: state.watermark.enabled ? 60 : 100 }}>
+                <div data-composite="attributes" className={`min-w-0 text-center flex flex-col gap-1 pt-1 pb-1 overflow-hidden shrink-0 ${state.watermark.enabled ? 'justify-start' : 'justify-center'}`} style={{ width: layout.galleryWidth, height: state.watermark.enabled ? layout.footerHeight - 64 : layout.footerHeight }}>
                   {renderAttributesInfo()}
                 </div>
               </div>
@@ -301,7 +266,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
             
             {/* Left Column */}
             <div className="min-w-0 h-full flex flex-col shrink-0" style={{ width: layout.mainWidth }}>
-              <div className="mb-3 text-center shrink-0 flex flex-col justify-center overflow-hidden" style={{ height: 100 }}>
+              <div className="mb-3 text-center shrink-0 flex flex-col justify-center overflow-hidden" style={{ height: layout.footerHeight }}>
                 {renderNameAndContact()}
               </div>
               
@@ -374,7 +339,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               </div>
               
-              <div data-composite="attributes" className="mt-3 text-center flex flex-col justify-start gap-1.5 w-full pt-3 pb-1 shrink-0 overflow-hidden" style={{ height: state.watermark.enabled ? 60 : 100 }}>
+              <div data-composite="attributes" className="mt-3 text-center flex flex-col justify-start gap-1 w-full pt-1 pb-1 shrink-0 overflow-hidden" style={{ height: state.watermark.enabled ? layout.footerHeight - 64 : layout.footerHeight }}>
                 {renderAttributesInfo()}
               </div>
             </div>
@@ -387,6 +352,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               data-composite="watermark" className={`absolute bottom-6 right-6 pointer-events-none z-50 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
               style={{
                 opacity: state.watermark.opacity / 100,
+                right: (A4_WIDTH - layout.width) / 2,
+                bottom: layout.margin,
                 maxWidth: layout.galleryWidth,
                 maxHeight: WATERMARK_BOX_HEIGHT,
                 overflow: 'hidden',

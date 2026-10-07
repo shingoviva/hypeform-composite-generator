@@ -3,6 +3,7 @@ import { AppState } from './types';
 import { getProtectedExposureTable, getVibranceAmount } from './imageAdjustments';
 import { photoContext } from './photoCanvas';
 import { layoutInstagram } from './instagramLayout';
+import { applyCompositeTypography } from './compositeTypography';
 
 async function preparePhoto(element: HTMLImageElement, state: AppState) {
   await element.decode();
@@ -110,6 +111,8 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
         await images[i].decode();
       }
       if (instagramSide) layoutInstagram(target, state, instagramSide);
+      await documentClone.fonts.ready;
+      applyCompositeTypography(target, state, instagramSide);
       // html2canvas does not reliably honor object-fit; bake each visible frame.
       for (const image of Array.from(target.querySelectorAll('img'))) {
         const computed = documentClone.defaultView!.getComputedStyle(image);

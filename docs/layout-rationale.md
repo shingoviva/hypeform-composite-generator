@@ -20,6 +20,16 @@ The ratios below are design decisions, not scientifically proven universal beaut
 - Watermark type uses the same supported font weights and spacing catalog as model names. Text size, tracking and italics are editable, with bounded placement and separate space from profile text.
 - Instagram remains two 1080 x 1350 JPEGs. Both retain the actual source crops using `contain`; typography and watermark choices carry over. Instagram margins are independently adjustable for its portrait format.
 
+## Typography Rules
+
+The card uses a name / information / secondary-label hierarchy, centered photo-column alignment, a four-unit spacing grid, name leading of 1.15, information leading of 1.4, and neutral tracking for small information text. These exact numerical values are implementation choices, not scientifically established optima. Font-specific supported weights are retained. Information text starts at 10 A4 layout units and does not shrink below 8; watermark text is capped at 80% of the fitted name size so it does not supersede the model identity.
+
+Name and information bands reserve space based on visible information volume, margin and watermark presence, independently of requested name size. Requested type sizes are upper bounds and fit automatically when text would exceed the available band. The same fitting function is rerun after fonts load in preview and in the export clone. Instagram also reserves fixed name/information bands, so name-size changes do not resize photos. Watermarks align to the right photo-column edge on A4.
+
+NN/g's visual hierarchy guidance supports a small number of clearly differentiated text levels and consistent grid alignment: https://www.nngroup.com/articles/principles-visual-design/
+
+W3C's text-spacing guidance concerns avoiding content loss when spacing is overridden; its test spacing values are not universal aesthetic defaults, and this fixed-format export is not being claimed as WCAG-compliant: https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html
+
 ## Validation Scope
 
-Automated WebKit/Chromium checks cover geometry, crop preservation, default snapping, keyboard fine adjustment, draft restoration and exports. Screenshots are reviewed at desktop and phone sizes. Actual iPhone hardware and casting outcomes are not tested.
+Automated WebKit/Chromium checks cover geometry, crop preservation, default snapping, keyboard fine adjustment, draft restoration and exports. Typography is checked across ten fonts, three margins and both ends of the name-size range using representative names and profile content; this is not a guarantee for arbitrarily long pasted text. Screenshots are reviewed at desktop and phone sizes. Actual iPhone hardware and casting outcomes are not tested.
