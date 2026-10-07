@@ -1,5 +1,6 @@
 import { AppState } from './types';
 import { getNameTypography } from './nameTypography';
+import { MAIN_PHOTO_RATIO, SUB_PHOTO_RATIO } from './compositeLayout';
 
 export function layoutInstagram(target: HTMLElement, state: AppState, side: 'left' | 'right') {
   const document = target.ownerDocument;
@@ -38,14 +39,14 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   }
   target.replaceChildren();
   target.style.cssText = `position:relative;width:1080px;height:1350px;box-sizing:border-box;background:white;color:black;padding:${margin}px ${margin}px ${watermark ? Math.max(96, margin) : margin}px;display:flex;flex-direction:column;gap:24px;overflow:hidden`;
-  if (side === 'left' && state.profile.nameAtBottom) target.append(body, header);
+  if (state.profile.nameAtBottom ?? true) target.append(body, header);
   else target.append(header, body);
   if (side === 'right') target.append(footer);
   if (watermark) {
     watermark.style.cssText = `position:absolute;bottom:24px;right:${margin}px;max-width:${1080 - margin * 2}px;opacity:${state.watermark.opacity / 100};text-align:right`;
     if (state.watermark.type === 'text') {
       const text = watermark.firstElementChild as HTMLElement | null;
-      if (text) text.style.cssText += ';line-height:1.3;padding:4px 0;overflow-wrap:anywhere;letter-spacing:0';
+      if (text) text.style.cssText += ';line-height:1.3;padding:4px 0;overflow-wrap:anywhere';
     } else {
       watermark.style.width = '190px'; watermark.style.height = '56px';
       watermark.style.display = 'flex'; watermark.style.alignItems = 'flex-end'; watermark.style.justifyContent = 'flex-end';
@@ -56,4 +57,9 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   while (header.offsetHeight + (side === 'right' ? footer.offsetHeight : 0) > 300 && parseFloat(name.style.fontSize) > 36) {
     name.style.fontSize = `${parseFloat(name.style.fontSize) - 2}px`;
   }
+  const photoWidth = side === 'left'
+    ? body.clientHeight * MAIN_PHOTO_RATIO
+    : (body.clientHeight - gap) * SUB_PHOTO_RATIO + gap;
+  body.style.width = `${Math.min(1080 - margin * 2, photoWidth)}px`;
+  body.style.alignSelf = 'center';
 }

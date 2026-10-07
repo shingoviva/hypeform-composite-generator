@@ -3,6 +3,7 @@ import { AppState } from './types';
 export const DEFAULT_STATE: AppState = {
   profile: {
     name: 'ALEXA VERMONT',
+    nameAtBottom: true,
     nameFont: '"Oswald", sans-serif',
     contact: '+1 (123) 456-7890',
     showContact: true,

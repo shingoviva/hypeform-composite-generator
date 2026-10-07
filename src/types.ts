@@ -50,9 +50,13 @@ export interface WatermarkData {
   imageUrl: string | null;
   opacity: number;
   size?: number;
+  textSpacing?: number;
+  textItalic?: boolean;
+  textSize?: number;
 }
 
 export interface AppState {
+  compositeMargin?: number;
   instagram?: { margin: number; gap: number };
   profile: ProfileData;
   watermark: WatermarkData;

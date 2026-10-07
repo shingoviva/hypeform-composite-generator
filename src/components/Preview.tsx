@@ -2,7 +2,8 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppState } from '../types';
 import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
-import { getNameTypography } from '../nameTypography';
+import { getNameTypography, NAME_FONTS } from '../nameTypography';
+import { getCompositeLayout } from '../compositeLayout';
 
 interface PreviewProps {
   state: AppState;
@@ -17,8 +18,6 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const WATERMARK_BOX_WIDTH = 190;
   const WATERMARK_BOX_HEIGHT = 56;
   const WATERMARK_MIN_HEIGHT = 24;
-  const WATERMARK_MIN_TEXT_SIZE = 20;
-  const WATERMARK_MAX_TEXT_SIZE = 38;
 
   useEffect(() => {
     const updateScale = () => {
@@ -51,6 +50,13 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
   const { profile, images } = state;
   const nameTypography = getNameTypography(profile);
+  const layout = getCompositeLayout(state.compositeMargin);
+  const nameAtBottom = profile.nameAtBottom ?? true;
+  const watermarkFont = NAME_FONTS.find(font => font.family === state.watermark.font) || NAME_FONTS[0];
+  const layoutStyle: React.CSSProperties = {
+    position: 'absolute', width: layout.width, height: A4_HEIGHT - layout.margin * 2,
+    left: (A4_WIDTH - layout.width) / 2, top: layout.margin,
+  };
   useLayoutEffect(() => {
     let active = true;
     const fitName = () => {
@@ -61,7 +67,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
       name.style.fontSize = `${nameTypography.size}px`;
       // Typography must fit its reserved band without resizing the photo frames.
       let size = nameTypography.size;
-      while (band.scrollHeight > band.clientHeight && size > 12) {
+      const contact = band.querySelector<HTMLElement>('[data-composite="contact"]');
+      while (name.offsetHeight + (contact?.offsetHeight ?? 0) + 16 > band.clientHeight && size > 12) {
         name.style.fontSize = `${--size}px`;
       }
     };
@@ -70,11 +77,38 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
     document.fonts.addEventListener('loadingdone', fitName);
     return () => { active = false; document.fonts.removeEventListener('loadingdone', fitName); };
   }, [profile, nameTypography.size, nameTypography.spacing]);
+  useLayoutEffect(() => {
+    let active = true;
+    const fit = () => {
+      if (!active) return;
+      const stamp = containerRef.current?.querySelector<HTMLElement>('[data-composite="watermark"]');
+      const text = state.watermark.type === 'text' ? stamp?.firstElementChild as HTMLElement | null : null;
+      if (stamp && text) {
+        let size = Math.min(38, Math.max(16, state.watermark.textSize ?? 31));
+        text.style.fontSize = `${size}px`;
+        while ((stamp.scrollHeight > stamp.clientHeight || stamp.scrollWidth > stamp.clientWidth) && size > 12) text.style.fontSize = `${--size}px`;
+      }
+      const attributes = containerRef.current?.querySelector<HTMLElement>('[data-composite="attributes"]');
+      if (attributes) {
+        const blocks = attributes.querySelectorAll<HTMLElement>('[data-composite]');
+        let size = 8.32;
+        blocks.forEach(block => { block.style.fontSize = `${size}px`; });
+        while (attributes.scrollHeight > attributes.clientHeight && size > 6.5) {
+          size -= 0.2;
+          blocks.forEach(block => { block.style.fontSize = `${size}px`; });
+        }
+      }
+    };
+    fit();
+    document.fonts.ready.then(fit);
+    document.fonts.addEventListener('loadingdone', fit);
+    return () => { active = false; document.fonts.removeEventListener('loadingdone', fit); };
+  }, [profile, state.watermark, state.compositeMargin]);
   const watermarkSize = state.watermark.size ?? 100;
   const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
   const watermarkRatio = (watermarkScale - 40) / 100;
   const watermarkHeight = WATERMARK_MIN_HEIGHT + watermarkRatio * (WATERMARK_BOX_HEIGHT - WATERMARK_MIN_HEIGHT);
-  const watermarkTextSize = WATERMARK_MIN_TEXT_SIZE + watermarkRatio * (WATERMARK_MAX_TEXT_SIZE - WATERMARK_MIN_TEXT_SIZE);
+  const watermarkTextSize = Math.min(38, Math.max(16, state.watermark.textSize ?? 31));
 
   const MainImagePlaceholder = () => (
     <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 font-sans text-sm">
@@ -116,13 +150,13 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const renderNameAndContact = () => (
     <>
       <h1 data-composite="name"
-        className={`uppercase mb-2 ${profile.nameItalic ? 'italic' : ''}`}
+        className={`uppercase mb-2 shrink-0 ${profile.nameItalic ? 'italic' : ''}`}
         style={{ fontFamily: nameTypography.font.family, fontWeight: nameTypography.font.weight, fontSize: nameTypography.size, letterSpacing: `${nameTypography.spacing}em`, lineHeight: 1.15, overflowWrap: 'anywhere', padding: '2px 6px', fontKerning: 'normal' }}
       >
         {profile.name || 'NAME'}
       </h1>
       {contactParts.length > 0 && (
-        <p data-composite="contact" className="font-sans text-[0.6rem] font-bold tracking-normal uppercase flex justify-center gap-1.5 whitespace-nowrap">
+        <p data-composite="contact" className="font-sans text-[0.6rem] font-bold tracking-normal uppercase flex flex-wrap justify-center gap-x-1.5 gap-y-1 whitespace-normal break-words shrink-0" style={{ lineHeight: 1.5, paddingBottom: 4 }}>
           {contactParts.map((part, idx) => (
             <React.Fragment key={idx}>
               <span>{part}</span>
@@ -140,7 +174,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
     
     return (
     <>
-      <div data-composite="measurements" className="font-sans text-[0.52rem] font-bold tracking-wider uppercase flex justify-center gap-x-2 w-full whitespace-nowrap">
+      <div data-composite="measurements" className="font-sans text-[0.52rem] font-bold uppercase flex flex-wrap justify-center gap-x-2 gap-y-0.5 w-full">
         <span className="flex gap-1"><span className="text-gray-400">HEIGHT</span><span>{formatMeasurement(profile.height, 'height')}</span></span>
         <span className="flex gap-1"><span className="text-gray-400">BUST</span><span>{formatMeasurement(profile.bust, 'generic')}</span></span>
         <span className="flex gap-1"><span className="text-gray-400">WAIST</span><span>{formatMeasurement(profile.waist, 'generic')}</span></span>
@@ -160,6 +194,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
   return (
     <div ref={containerRef} className="relative flex items-center justify-center w-full h-full overflow-hidden">
+      <style>{'#composite-canvas img { object-fit: contain; background: white; }'}</style>
       <div style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}>
         <div 
           id="composite-canvas"
@@ -178,10 +213,10 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               vibrance={image.vibrance}
             />
           ))}
-          {profile.nameAtBottom ? (
-            <div className="flex flex-col w-full h-full p-12">
-              <div className="flex w-full gap-12 flex-1 min-h-0">
-                <div className="w-[49%] flex flex-col">
+          {nameAtBottom ? (
+            <div className="flex flex-col" style={layoutStyle}>
+              <div className="flex w-full min-h-0 shrink-0" style={{ gap: layout.columnGap, height: layout.photoHeight }}>
+                <div className="min-w-0 flex flex-col shrink-0" style={{ width: layout.mainWidth }}>
                   <div 
                     className="flex-1 min-h-0 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                     data-composite="main" onClick={() => onImageClick('main')}
@@ -198,8 +233,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                   </div>
                 </div>
 
-                <div className="w-[51%] flex flex-col">
-                  <div data-composite="gallery" className="grid grid-cols-2 grid-rows-2 gap-[14px] w-full h-full">
+                <div className="min-w-0 flex flex-col shrink-0" style={{ width: layout.galleryWidth }}>
+                  <div data-composite="gallery" className="grid grid-cols-2 grid-rows-2 w-full h-full" style={{ gap: layout.photoGap }}>
                     <div 
                       className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                       onClick={() => onImageClick('sub1')}
@@ -252,21 +287,21 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               </div>
 
-              <div className="flex w-full gap-12 mt-4 shrink-0 items-end" style={{ height: 112 }}>
-                <div className="w-[49%] text-center flex flex-col justify-end overflow-hidden" style={{ height: 112 }}>
+              <div className="flex w-full shrink-0 items-start" style={{ height: 100, gap: layout.columnGap, marginTop: 12 }}>
+                <div className="min-w-0 text-center flex flex-col justify-center overflow-hidden shrink-0" style={{ height: 100, width: layout.mainWidth }}>
                   {renderNameAndContact()}
                 </div>
-                <div className="w-[51%] text-center flex flex-col justify-center gap-1.5 border-t border-black pt-3 pb-1 overflow-hidden">
+                <div data-composite="attributes" className={`min-w-0 text-center flex flex-col gap-1.5 pt-3 pb-1 overflow-hidden shrink-0 ${state.watermark.enabled ? 'justify-start' : 'justify-center'}`} style={{ width: layout.galleryWidth, height: state.watermark.enabled ? 60 : 100 }}>
                   {renderAttributesInfo()}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex w-full h-full p-12 gap-12">
+            <div className="flex" style={{ ...layoutStyle, gap: layout.columnGap }}>
             
             {/* Left Column */}
-            <div className="w-[49%] h-full flex flex-col">
-              <div className="mb-6 text-center shrink-0 flex flex-col justify-center overflow-hidden" style={{ height: 112 }}>
+            <div className="min-w-0 h-full flex flex-col shrink-0" style={{ width: layout.mainWidth }}>
+              <div className="mb-3 text-center shrink-0 flex flex-col justify-center overflow-hidden" style={{ height: 100 }}>
                 {renderNameAndContact()}
               </div>
               
@@ -287,8 +322,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
             </div>
 
             {/* Right Column */}
-            <div className="w-[51%] h-full flex flex-col pb-1">
-              <div data-composite="gallery" className="grid grid-cols-2 grid-rows-2 gap-[14px] flex-1 min-h-0">
+            <div className="min-w-0 h-full flex flex-col pb-1 shrink-0" style={{ width: layout.galleryWidth }}>
+              <div data-composite="gallery" className="grid grid-cols-2 grid-rows-2 shrink-0 min-h-0" style={{ height: layout.photoHeight, gap: layout.photoGap }}>
                 <div 
                   className="bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                   onClick={() => onImageClick('sub1')}
@@ -339,7 +374,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               </div>
               
-              <div className="mt-4 text-center flex flex-col justify-center gap-1.5 w-full border-t border-black pt-3 pb-1 shrink-0 overflow-hidden">
+              <div data-composite="attributes" className="mt-3 text-center flex flex-col justify-start gap-1.5 w-full pt-3 pb-1 shrink-0 overflow-hidden" style={{ height: state.watermark.enabled ? 60 : 100 }}>
                 {renderAttributesInfo()}
               </div>
             </div>
@@ -352,6 +387,9 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               data-composite="watermark" className={`absolute bottom-6 right-6 pointer-events-none z-50 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
               style={{
                 opacity: state.watermark.opacity / 100,
+                maxWidth: layout.galleryWidth,
+                maxHeight: WATERMARK_BOX_HEIGHT,
+                overflow: 'hidden',
                 width: state.watermark.type === 'image' ? WATERMARK_BOX_WIDTH : undefined,
                 height: state.watermark.type === 'image' ? WATERMARK_BOX_HEIGHT : undefined,
               }}
@@ -359,11 +397,15 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               {state.watermark.type === 'text' && state.watermark.text && (
                 <div 
                   style={{ 
-                    fontFamily: state.watermark.font,
+                    fontFamily: watermarkFont.family,
+                    fontWeight: watermarkFont.weight,
+                    letterSpacing: `${state.watermark.textSpacing ?? watermarkFont.spacing}em`,
                     fontSize: `${watermarkTextSize}px`,
-                    lineHeight: 1,
+                    lineHeight: 1.2,
+                    padding: '2px 4px',
+                    overflowWrap: 'anywhere',
                   }}
-                  className="font-bold tracking-widest text-black text-right"
+                  className={`text-black text-right ${state.watermark.textItalic ? 'italic' : ''}`}
                 >
                   {state.watermark.text}
                 </div>

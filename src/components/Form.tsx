@@ -4,6 +4,8 @@ import { UiLanguage } from '../App';
 import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import NameTypographyControls from './NameTypographyControls';
+import SnapRange from './SnapRange';
+import WatermarkTypographyControls from './WatermarkTypographyControls';
 
 interface FormProps {
   state: AppState;
@@ -206,7 +208,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   <input 
                     type="checkbox" 
                     name="nameAtBottom" 
-                    checked={state.profile.nameAtBottom || false} 
+                    checked={state.profile.nameAtBottom ?? true}
                     onChange={handleToggle}
                     className="w-3 h-3 cursor-pointer"
                   />
@@ -366,7 +368,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                       <button 
                         aria-label={`${lang.subPhotos} ${key.slice(-1)}`}
                         onClick={() => onImageClick(key)}
-                        className="w-full aspect-[3/4] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-1"
+                        className="w-full aspect-[2/3] bg-gray-100 border border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden mb-1"
                       >
                         {image.croppedUrl ? (
                           image.fitMode === 'contain' ? (
@@ -436,20 +438,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                     onChange={handleWatermarkChange} 
                     className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" 
                   />
-                  <select 
-                    name="font" 
-                    value={state.watermark.font} 
-                    onChange={handleWatermarkChange} 
-                    className="w-full text-sm text-gray-700 bg-transparent border-b border-gray-200 py-1 outline-none cursor-pointer"
-                  >
-                    <option value='"Oswald", sans-serif'>Oswald</option>
-                    <option value='"Montserrat", sans-serif'>Montserrat</option>
-                    <option value='"Playfair Display", serif'>Playfair Display</option>
-                    <option value='"Inter", sans-serif'>Inter</option>
-                    <option value='"Anton", sans-serif'>Anton</option>
-                    <option value='"Bodoni Moda", serif'>Bodoni Moda</option>
-                    <option value='"Cormorant Garamond", serif'>Cormorant Garamond</option>
-                  </select>
+                  <WatermarkTypographyControls state={state} japanese={uiLanguage === 'ja'} onChange={patch => setState(previous => ({ ...previous, watermark: { ...previous.watermark, ...patch } }))} />
                 </div>
               )}
 
@@ -479,12 +468,12 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                 </div>
               )}
 
-              <div>
+              {state.watermark.type === 'image' && <div>
                 <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-2">
                   <span>{lang.watermarkSize} ({state.watermark.size ?? 100}%)</span>
                 </label>
-                <input
-                  type="range"
+                <SnapRange
+                  defaultValueNumber={100}
                   name="size"
                   min="40"
                   max="140"
@@ -492,14 +481,14 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
                   onChange={handleWatermarkChange}
                   className="w-full accent-black"
                 />
-              </div>
+              </div>}
 
               <div>
                 <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-2">
                   <span>{lang.watermarkOpacity} ({state.watermark.opacity}%)</span>
                 </label>
-                <input 
-                  type="range" 
+                <SnapRange
+                  defaultValueNumber={50}
                   name="opacity" 
                   min="0" 
                   max="100" 

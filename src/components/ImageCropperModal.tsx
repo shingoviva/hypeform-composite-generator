@@ -9,6 +9,7 @@ import {
 } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import { cropPhoto } from '../photoCanvas';
+import SnapRange from './SnapRange';
 
 // Contain mode uses the original file without a redundant padded copy.
 
@@ -171,8 +172,8 @@ export default function ImageCropperModal({
           <div className="cropper-control-list space-y-3 mb-4">
             <div className="cropper-control-row flex items-center gap-3">
               <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.zoom}</span>
-              <input
-                type="range"
+              <SnapRange
+                defaultValueNumber={1}
                 value={zoom}
                 min={1}
                 max={3}
@@ -186,8 +187,8 @@ export default function ImageCropperModal({
             </div>
             <div className="cropper-control-row flex items-center gap-3">
               <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.exposure}</span>
-              <input
-                type="range"
+              <SnapRange
+                defaultValueNumber={DEFAULT_EXPOSURE}
                 value={exposure}
                 min={-1}
                 max={1}
@@ -202,8 +203,8 @@ export default function ImageCropperModal({
             </div>
             <div className="cropper-control-row flex items-center gap-3">
               <span className="cropper-control-label w-24 text-sm font-medium text-neutral-600">{lang.vibrance}</span>
-              <input
-                type="range"
+              <SnapRange
+                defaultValueNumber={DEFAULT_VIBRANCE}
                 value={vibrance}
                 min={-50}
                 max={50}
