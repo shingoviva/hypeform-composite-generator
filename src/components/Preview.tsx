@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppState } from '../types';
 import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
@@ -51,6 +51,25 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
   const { profile, images } = state;
   const nameTypography = getNameTypography(profile);
+  useLayoutEffect(() => {
+    let active = true;
+    const fitName = () => {
+      if (!active) return;
+      const name = containerRef.current?.querySelector<HTMLElement>('[data-composite="name"]');
+      const band = name?.parentElement;
+      if (!name || !band || !band.clientHeight) return;
+      name.style.fontSize = `${nameTypography.size}px`;
+      // Typography must fit its reserved band without resizing the photo frames.
+      let size = nameTypography.size;
+      while (band.scrollHeight > band.clientHeight && size > 12) {
+        name.style.fontSize = `${--size}px`;
+      }
+    };
+    fitName();
+    document.fonts.ready.then(fitName);
+    document.fonts.addEventListener('loadingdone', fitName);
+    return () => { active = false; document.fonts.removeEventListener('loadingdone', fitName); };
+  }, [profile, nameTypography.size, nameTypography.spacing]);
   const watermarkSize = state.watermark.size ?? 100;
   const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
   const watermarkRatio = (watermarkScale - 40) / 100;
@@ -164,7 +183,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
               <div className="flex w-full gap-12 flex-1 min-h-0">
                 <div className="w-[49%] flex flex-col">
                   <div 
-                    className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
+                    className="flex-1 min-h-0 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                     data-composite="main" onClick={() => onImageClick('main')}
                   >
                     {images.main.croppedUrl ? (
@@ -233,8 +252,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                 </div>
               </div>
 
-              <div className="flex w-full gap-12 mt-4 shrink-0 items-end">
-                <div className="w-[49%] text-center">
+              <div className="flex w-full gap-12 mt-4 shrink-0 items-end" style={{ height: 112 }}>
+                <div className="w-[49%] text-center flex flex-col justify-end overflow-hidden" style={{ height: 112 }}>
                   {renderNameAndContact()}
                 </div>
                 <div className="w-[51%] text-center flex flex-col justify-center gap-1.5 border-t border-black pt-3 pb-1 overflow-hidden">
@@ -247,12 +266,12 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
             
             {/* Left Column */}
             <div className="w-[49%] h-full flex flex-col">
-              <div className="mb-6 text-center shrink-0">
+              <div className="mb-6 text-center shrink-0 flex flex-col justify-center overflow-hidden" style={{ height: 112 }}>
                 {renderNameAndContact()}
               </div>
               
               <div 
-                className="flex-1 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
+                className="flex-1 min-h-0 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
                 data-composite="main" onClick={() => onImageClick('main')}
               >
                 {images.main.croppedUrl ? (
