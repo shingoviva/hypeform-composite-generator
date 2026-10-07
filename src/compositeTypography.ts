@@ -41,9 +41,11 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
   if (stamp && text) {
     const font = NAME_FONTS.find(font => font.family === state.watermark.font) || NAME_FONTS[0];
     const nameSize = name ? parseFloat(name.style.fontSize) : 52;
-    let size = Math.min(state.watermark.textSize ?? 31, 38, nameSize * .8);
-    Object.assign(text.style, { fontFamily: font.family, fontWeight: String(font.weight), fontSize: `${size}px`, letterSpacing: `${state.watermark.textSpacing ?? font.spacing}em`, lineHeight: '1.2', padding: '4px', overflowWrap: 'anywhere' });
-    while ((stamp.scrollHeight > stamp.clientHeight || stamp.scrollWidth > stamp.clientWidth) && size > 12) text.style.fontSize = `${--size}px`;
+    const height = stamp.clientHeight || 28;
+    let size = Math.min(38, nameSize * .8, (height - 8) / 1.4);
+    Object.assign(text.style, { fontFamily: font.family, fontWeight: String(font.weight), fontSize: `${size}px`, letterSpacing: `${state.watermark.textSpacing ?? font.spacing}em`, lineHeight: '1.4', padding: '2px 2px 6px', whiteSpace: 'nowrap' });
+    // Flex-end overflow can extend above its parent without increasing scrollHeight.
+    while ((text.offsetHeight > height || text.scrollWidth > stamp.clientWidth) && size > 1) text.style.fontSize = `${size = Math.max(1, size - .5)}px`;
     text.style.fontSize = `${size * (.65 + .35 * ((state.watermark.textSize ?? 31) - 16) / 22)}px`;
   }
 }

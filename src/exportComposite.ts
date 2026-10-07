@@ -132,7 +132,9 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
           drawWidth = image.naturalWidth * ratio;
           drawHeight = image.naturalHeight * ratio;
         }
-        context.drawImage(image, (frame.width - drawWidth) / 2, (frame.height - drawHeight) / 2, drawWidth, drawHeight);
+        const position = computed.objectPosition.split(' ');
+        const alignment = (value: string | undefined) => value === 'right' || value === 'bottom' ? 1 : value === 'left' || value === 'top' ? 0 : value?.endsWith('%') ? parseFloat(value) / 100 : .5;
+        context.drawImage(image, (frame.width - drawWidth) * alignment(position[0]), (frame.height - drawHeight) * alignment(position[1]), drawWidth, drawHeight);
         image.src = frame.toDataURL('image/png');
         image.style.width = `${width}px`;
         image.style.height = `${height}px`;

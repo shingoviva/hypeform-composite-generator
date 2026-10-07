@@ -45,14 +45,17 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   else target.append(header, body);
   if (side === 'right') target.append(footer);
   if (watermark) {
-    watermark.style.cssText = `position:absolute;bottom:8px;right:${margin}px;max-width:${1080 - margin * 2}px;max-height:28px;overflow:hidden;opacity:${state.watermark.opacity / 100};text-align:right`;
+    watermark.style.cssText = `position:absolute;bottom:6px;right:12px;max-width:1056px;height:28px;max-height:28px;display:flex;align-items:center;justify-content:flex-end;overflow:hidden;opacity:${state.watermark.opacity / 100};text-align:right`;
     if (state.watermark.type === 'text') {
       const text = watermark.firstElementChild as HTMLElement | null;
-      if (text) text.style.cssText += ';line-height:1.3;padding:4px 0;overflow-wrap:anywhere';
+      if (text) text.style.cssText += ';line-height:1.2;padding:2px;white-space:nowrap';
     } else {
       watermark.style.width = '190px'; watermark.style.height = '28px';
       const image = watermark.querySelector('img');
-      if (image) image.style.maxHeight = '28px';
+      if (image) {
+        const height = 16 + (Math.min(140, Math.max(40, state.watermark.size ?? 100)) - 40) / 100 * 12;
+        image.style.cssText = `display:block;width:100%;height:${height}px;max-width:190px;max-height:28px;object-fit:contain;object-position:right bottom`;
+      }
       watermark.style.display = 'flex'; watermark.style.alignItems = 'flex-end'; watermark.style.justifyContent = 'flex-end';
     }
     target.append(watermark);
