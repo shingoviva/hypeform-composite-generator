@@ -268,12 +268,13 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
             
             {/* Left Column */}
             <div className="min-w-0 h-full flex flex-col shrink-0" style={{ width: layout.mainWidth }}>
-              <div className="mb-3 text-center shrink-0 flex flex-col justify-center overflow-hidden" style={{ height: layout.footerHeight }}>
+              <div data-name-band-height={layout.footerHeight} className="mb-3 text-center shrink-0 flex flex-col justify-start" style={{ height: layout.footerHeight }}>
                 {renderNameAndContact()}
               </div>
               
               <div 
-                className="flex-1 min-h-0 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
+                className="shrink-0 min-h-0 w-full bg-gray-200 relative overflow-hidden shadow-inner cursor-pointer"
+                style={{ height: layout.photoHeight }}
                 data-composite="main" onClick={() => onImageClick('main')}
               >
                 {images.main.croppedUrl ? (

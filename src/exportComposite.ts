@@ -144,6 +144,40 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
         frame.width = frame.height = 0;
       }
       await documentClone.fonts.ready;
+      if (!instagramSide && !(state.profile.nameAtBottom ?? true)) {
+        const name = target.querySelector<HTMLElement>('[data-composite="name"]');
+        if (name) {
+          // Rasterize this optically aligned title to avoid html2canvas baseline drift.
+          const style = documentClone.defaultView!.getComputedStyle(name);
+          const width = name.offsetWidth, height = name.offsetHeight;
+          const title = documentClone.createElement('canvas');
+          title.width = Math.round(width * scale); title.height = Math.round(height * scale);
+          const context = title.getContext('2d')!; context.scale(scale, scale);
+          context.fillStyle = '#ffffff'; context.fillRect(0, 0, width, height);
+          const size = parseFloat(style.fontSize), leading = parseFloat(style.lineHeight);
+          context.font = `${style.fontStyle} ${style.fontWeight} ${size}px ${style.fontFamily}`;
+          context.letterSpacing = style.letterSpacing;
+          context.textAlign = 'center'; context.fillStyle = style.color;
+          const metrics = context.measureText(name.textContent || 'H');
+          const ascent = metrics.fontBoundingBoxAscent ?? size * .8, descent = metrics.fontBoundingBoxDescent ?? size * .2;
+          const baseline = parseFloat(style.paddingTop) + (leading - ascent - descent) / 2 + ascent;
+          const lines: string[] = []; let line = '';
+          const available = width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+          for (const word of (name.textContent || '').trim().split(/\s+/)) {
+            const next = line ? `${line} ${word}` : word;
+            if (line && context.measureText(next).width > available) { lines.push(line); line = ''; }
+            for (const character of (line ? ` ${word}` : word)) {
+              if (line && context.measureText(line + character).width > available) { lines.push(line); line = ''; }
+              line += character;
+            }
+          }
+          if (line) lines.push(line);
+          lines.forEach((text, index) => context.fillText(text, width / 2, baseline + index * leading));
+          const image = documentClone.createElement('img'); image.src = title.toDataURL('image/png');
+          image.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain';
+          name.style.height = `${height}px`; name.replaceChildren(image); await image.decode();
+        }
+      }
       normalizeColors();
     }
   });

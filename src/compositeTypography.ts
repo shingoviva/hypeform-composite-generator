@@ -19,6 +19,8 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
   const name = root.querySelector<HTMLElement>('[data-composite="name"]');
   const contact = root.querySelector<HTMLElement>('[data-composite="contact"]');
   const band = name?.parentElement;
+  const topBandHeight = !side && !(state.profile.nameAtBottom ?? true) ? Number(band?.dataset.nameBandHeight) : 0;
+  if (band && topBandHeight) band.style.height = `${topBandHeight}px`;
   const bodySize = side ? 14 : 10;
   if (contact) {
     Object.assign(contact.style, { fontSize: `${bodySize}px`, lineHeight: '1.4', letterSpacing: '0', gap: '4px 8px', margin: '0', paddingBottom: '4px', flexShrink: '0' });
@@ -49,6 +51,14 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
     }
   }
   const stamp = root.querySelector<HTMLElement>('[data-composite="watermark"]');
+  if (name && band && topBandHeight) {
+    band.style.justifyContent = 'flex-start';
+    const inset = inkInset(name);
+    name.style.marginTop = `${-inset}px`;
+    // Keep the photo frame fixed; only the occupied title band moves its position.
+    const occupied = name.offsetHeight - inset + 8 + (contact?.offsetHeight ?? 0) + TYPE_GRID;
+    band.style.height = `${Math.min(topBandHeight, Math.max(TYPE_GRID, occupied))}px`;
+  }
   if (!side && (state.profile.nameAtBottom ?? true) && name && band && attributes) {
     const first = attributes.querySelector<HTMLElement>('[data-composite="measurements"] span');
     if (first && root.clientWidth && root.getBoundingClientRect().width) {
