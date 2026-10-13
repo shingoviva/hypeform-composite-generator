@@ -4,6 +4,7 @@ import Form from './Form';
 import Preview from './Preview';
 import jsPDF from 'jspdf';
 import { renderComposite } from '../exportComposite';
+import { frameWholeComposite } from '../instagramWhole';
 import { Share2, Download, X, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import PreviewOptions from './PreviewOptions';
 import ImageCropperModal from './ImageCropperModal';
@@ -52,7 +53,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
     : { saving: 'Saving locally...', saved: 'Saved on this device', unavailable: 'Local save unavailable' }[saveStatus];
   const [exportResult, setExportResult] = useState<{ file: File; url: string; format: 'pdf' | 'jpeg' } | null>(null);
   const [showPreviewOptions, setShowPreviewOptions] = useState(false);
-  const [instagramResult, setInstagramResult] = useState<{ file: File; url: string; side: 'left' | 'right' }[] | null>(null);
+  const [instagramResult, setInstagramResult] = useState<{ file: File; url: string; side: 'left' | 'right' | 'whole' }[] | null>(null);
   useEffect(() => () => {
     instagramResult?.forEach(result => URL.revokeObjectURL(result.url));
   }, [instagramResult]);
@@ -204,15 +205,17 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
   };
 
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
-  const performInstagramExport = async () => {
+  const performInstagramExport = async (mode: 'split' | 'whole' = 'split') => {
     if (isExporting) return;
     setIsExporting(true);
     const results: NonNullable<typeof instagramResult> = [];
     try {
       const element = document.getElementById('composite-canvas');
       if (!element) throw new Error('Preview unavailable');
-      for (const side of ['left', 'right'] as const) {
-        const canvas = await renderComposite(element, state, false, 'jpeg', side);
+      for (const side of (mode === 'whole' ? ['whole'] : ['left', 'right']) as ('left' | 'right' | 'whole')[]) {
+        const source = await renderComposite(element, state, false, 'jpeg', side === 'whole' ? undefined : side);
+        const canvas = side === 'whole' ? frameWholeComposite(source, state.instagram?.margin) : source;
+        if (canvas !== source) source.width = source.height = 0;
         try {
           const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Image export failed')), 'image/jpeg', .97));
           const file = new File([blob], `${state.profile.name || 'composite'}_instagram_${side}.jpg`, { type: 'image/jpeg' });
@@ -401,8 +404,8 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
       {instagramResult && <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
         <section role="dialog" aria-modal="true" aria-labelledby="instagram-title" className="bg-white rounded-lg p-5 w-full max-w-2xl max-h-[90dvh] overflow-y-auto">
           <div className="flex justify-between items-center mb-3"><h2 id="instagram-title" className="font-bold">Instagram · 1080 × 1350</h2><button onClick={() => setInstagramResult(null)} aria-label={uiLanguage === 'ja' ? '閉じる' : 'Close'} className="p-2"><X size={20} /></button></div>
-          <div className="grid grid-cols-2 gap-3">{instagramResult.map(result => <div key={result.side} className="min-w-0">
-            <p className="text-xs text-gray-500 mb-2">{result.side === 'left' ? (uiLanguage === 'ja' ? '1 · 左側' : '1 · Left') : (uiLanguage === 'ja' ? '2 · 右側' : '2 · Right')}</p>
+          <div className={instagramResult.length === 1 ? 'max-w-sm mx-auto' : 'grid grid-cols-2 gap-3'}>{instagramResult.map(result => <div key={result.side} className="min-w-0">
+            <p className="text-xs text-gray-500 mb-2">{result.side === 'whole' ? (uiLanguage === 'ja' ? '全体' : 'Whole composite') : result.side === 'left' ? (uiLanguage === 'ja' ? '1 · 左側' : '1 · Left') : (uiLanguage === 'ja' ? '2 · 右側' : '2 · Right')}</p>
             <img src={result.url} alt={`Instagram ${result.side}`} className="w-full border border-gray-100" />
             {navigator.canShare?.({ files: [result.file] }) && <button onClick={() => shareInstagram(result.file)} className="w-full text-xs py-3 flex items-center justify-center gap-2 mt-2 bg-black text-white"><Share2 size={16} />{uiLanguage === 'ja' ? '共有して保存' : 'Share and save'}</button>}
             <a href={result.url} download={result.file.name} className="w-full text-xs py-3 flex items-center justify-center gap-2 mt-2 border border-gray-300"><Download size={16} />{uiLanguage === 'ja' ? 'ダウンロード' : 'Download'}</a>

@@ -3,6 +3,17 @@ import { getNameTypography, NAME_FONTS } from './nameTypography';
 
 export const TYPE_GRID = 4;
 
+function inkInset(element: HTMLElement) {
+  const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+  const size = parseFloat(style.fontSize);
+  const context = element.ownerDocument.createElement('canvas').getContext('2d')!;
+  context.font = `${style.fontStyle} ${style.fontWeight} ${size}px ${style.fontFamily}`;
+  const metrics = context.measureText(element.textContent?.trim() || 'H');
+  const ascent = metrics.fontBoundingBoxAscent ?? size * .8;
+  const descent = metrics.fontBoundingBoxDescent ?? size * .2;
+  return parseFloat(style.paddingTop) + (parseFloat(style.lineHeight) - ascent - descent) / 2 + ascent - metrics.actualBoundingBoxAscent;
+}
+
 export function applyCompositeTypography(root: HTMLElement, state: AppState, side?: 'left' | 'right') {
   const typography = getNameTypography(state.profile);
   const name = root.querySelector<HTMLElement>('[data-composite="name"]');
@@ -13,6 +24,7 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
     Object.assign(contact.style, { fontSize: `${bodySize}px`, lineHeight: '1.4', letterSpacing: '0', gap: '4px 8px', margin: '0', paddingBottom: '4px', flexShrink: '0' });
   }
   if (name && band?.clientHeight) {
+    band.style.justifyContent = !side && (state.profile.nameAtBottom ?? true) ? 'flex-start' : 'center';
     let size = 84 * (side === 'left' ? 1.25 : 1);
     Object.assign(name.style, { fontSize: `${size}px`, lineHeight: '1.15', letterSpacing: `${typography.spacing}em`, fontFamily: typography.font.family, fontWeight: String(typography.font.weight), margin: '0 0 8px', padding: '4px', flexShrink: '0' });
     // Reserve one grid unit for glyph descenders and export rasterizer differences.
@@ -37,6 +49,15 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
     }
   }
   const stamp = root.querySelector<HTMLElement>('[data-composite="watermark"]');
+  if (!side && (state.profile.nameAtBottom ?? true) && name && band && attributes) {
+    const first = attributes.querySelector<HTMLElement>('[data-composite="measurements"] span');
+    if (first && root.clientWidth && root.getBoundingClientRect().width) {
+      band.style.justifyContent = 'flex-start';
+      const scale = root.getBoundingClientRect().width / root.clientWidth;
+      const target = (first.getBoundingClientRect().top - band.getBoundingClientRect().top) / scale + inkInset(first);
+      name.style.marginTop = `${target - inkInset(name)}px`;
+    }
+  }
   // Foreground text has its own opaque backing; the independent logo cannot impair it.
   root.style.isolation = 'isolate';
   for (const node of [name, contact, ...Array.from(attributes?.children ?? [])] as (HTMLElement | null)[]) {
