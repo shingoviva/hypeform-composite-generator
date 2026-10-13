@@ -22,6 +22,8 @@ The ratios below are design decisions, not scientifically proven universal beaut
 
 ## Typography Rules
 
+Contact fields retain the compact wrapping layout for short content. When a visible item exceeds 65% of its available width, or combined item widths exceed 180%, phone/email/agency become separate centered rows. Long unbroken addresses can wrap within their row. Hidden fields are excluded, and the layout is recalculated from an unmodified baseline so shortening content restores the compact layout. A bounded body-size fit preserves room for the model name.
+
 With the name above the main photo, the title's visible glyph top aligns with the right gallery's top. The title/contact band contracts to its occupied height, so smaller names move the left photo upward without changing its frame dimensions or saved crop. The band is reset to its safe maximum before each fit to avoid cumulative shrinkage. Upper-name A4 exports rasterize the fitted title at export resolution to preserve the optical alignment despite html2canvas baseline differences.
 
 The card uses a name / information / secondary-label hierarchy, centered photo-column alignment, a four-unit spacing grid, name leading of 1.15, information leading of 1.4, and neutral tracking for small information text. These exact numerical values are implementation choices, not scientifically established optima. Font-specific supported weights are retained. Information text starts at 10 A4 layout units and does not shrink below 8; watermark text is capped at 80% of the fitted name size so it does not supersede the model identity.

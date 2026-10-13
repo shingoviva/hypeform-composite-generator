@@ -23,7 +23,21 @@ export function applyCompositeTypography(root: HTMLElement, state: AppState, sid
   if (band && topBandHeight) band.style.height = `${topBandHeight}px`;
   const bodySize = side ? 14 : 10;
   if (contact) {
-    Object.assign(contact.style, { fontSize: `${bodySize}px`, lineHeight: '1.4', letterSpacing: '0', gap: '4px 8px', margin: '0', paddingBottom: '4px', flexShrink: '0' });
+    Object.assign(contact.style, { display: 'flex', gridTemplateColumns: '', fontSize: `${bodySize}px`, lineHeight: '1.4', letterSpacing: '0', gap: '4px 8px', margin: '0', paddingBottom: '4px', flexShrink: '0' });
+    const style = root.ownerDocument.defaultView!.getComputedStyle(contact);
+    const context = root.ownerDocument.createElement('canvas').getContext('2d')!;
+    context.font = `${style.fontWeight} ${bodySize}px ${style.fontFamily}`;
+    const parts = Array.from(contact.children) as HTMLElement[];
+    const widths = parts.map(part => context.measureText(part.textContent || '').width);
+    const available = contact.clientWidth;
+    const stacked = available > 0 && (widths.some(width => width > available * .65) || widths.reduce((sum, width) => sum + width, 0) > available * 1.8);
+    if (stacked) Object.assign(contact.style, { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '3px', lineHeight: '1.35' });
+    for (const part of parts) Object.assign(part.style, { minWidth: '0', maxWidth: '100%', whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: stacked ? '500' : '' });
+    // Extremely long inputs still need to leave room for the model name.
+    let fittedBody = bodySize;
+    while (band && contact.offsetHeight > band.clientHeight * .65 && fittedBody > (side ? 12 : 8)) {
+      fittedBody -= .25; contact.style.fontSize = `${fittedBody}px`;
+    }
   }
   if (name && band?.clientHeight) {
     band.style.justifyContent = !side && (state.profile.nameAtBottom ?? true) ? 'flex-start' : 'center';
