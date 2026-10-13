@@ -1,5 +1,4 @@
 import { AppState } from './types';
-import { getNameTypography } from './nameTypography';
 import { MAIN_PHOTO_RATIO, SUB_PHOTO_RATIO } from './compositeLayout';
 import { applyCompositeTypography } from './compositeTypography';
 
@@ -17,8 +16,6 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   const watermark = get('watermark');
   const header = document.createElement('div');
   header.style.cssText = `flex-shrink:0;text-align:center;height:${side === 'left' ? 96 : 64}px;display:flex;flex-direction:column;justify-content:center;overflow:hidden`;
-  const typography = getNameTypography(state.profile);
-  name.style.cssText += `;font-size:${typography.size / typography.defaultSize * (side === 'left' ? 68 : 48)}px;line-height:1.15;letter-spacing:${typography.spacing}em;margin:0 0 12px;overflow-wrap:anywhere`;
   header.append(name);
   if (side === 'left' && contact) {
     contact.style.cssText = 'font-size:14px;line-height:1.5;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;white-space:normal;overflow-wrap:anywhere';
@@ -46,19 +43,7 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   else target.append(header, body);
   if (side === 'right') target.append(footer);
   if (watermark) {
-    watermark.style.cssText = `position:absolute;bottom:6px;right:12px;max-width:1056px;height:28px;max-height:28px;display:flex;align-items:center;justify-content:flex-end;overflow:hidden;opacity:${state.watermark.opacity / 100};text-align:right`;
-    if (state.watermark.type === 'text') {
-      const text = watermark.firstElementChild as HTMLElement | null;
-      if (text) text.style.cssText += ';line-height:1.2;padding:2px;white-space:nowrap';
-    } else {
-      watermark.style.width = '190px'; watermark.style.height = '28px';
-      const image = watermark.querySelector('img');
-      if (image) {
-        const height = 16 + (Math.min(140, Math.max(40, state.watermark.size ?? 100)) - 40) / 100 * 12;
-        image.style.cssText = `display:block;width:100%;height:${height}px;max-width:190px;max-height:28px;object-fit:contain;object-position:right bottom`;
-      }
-      watermark.style.display = 'flex'; watermark.style.alignItems = 'flex-end'; watermark.style.justifyContent = 'flex-end';
-    }
+    watermark.style.cssText = `position:absolute;display:flex;justify-content:flex-end;opacity:${state.watermark.opacity / 100};text-align:right`;
     target.append(watermark);
   }
   applyCompositeTypography(target, state, side);

@@ -2,7 +2,7 @@ export const DEFAULT_COMPOSITE_MARGIN = 28;
 export const MAIN_PHOTO_RATIO = 4 / 5;
 export const SUB_PHOTO_RATIO = 4 / 5;
 
-export function getCompositeLayout(value?: number, watermark = false, detailLength = 0) {
+export function getCompositeLayout(value?: number, detailLength = 0) {
   const margin = Math.min(80, Math.max(16, value ?? DEFAULT_COMPOSITE_MARGIN));
   const columnGap = Math.round((20 + margin / 4) / 4) * 4;
   const photoGap = Math.round((10 + margin / 7) / 4) * 4;

@@ -53,7 +53,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const { profile, images } = state;
   const nameTypography = getNameTypography(profile);
   const detailLength = [profile.hair, profile.eyes, profile.showNationality ? profile.nationality : '', profile.showResidence ? profile.residence : '', ...(profile.showExperience ? [profile.experience, profile.experience2, profile.experience3, profile.experience4] : [])].join(' ').length;
-  const layout = getCompositeLayout(state.compositeMargin, state.watermark.enabled, detailLength);
+  const layout = getCompositeLayout(state.compositeMargin, detailLength);
   const nameAtBottom = profile.nameAtBottom ?? true;
   const watermarkFont = NAME_FONTS.find(font => font.family === state.watermark.font) || NAME_FONTS[0];
   const layoutStyle: React.CSSProperties = {
@@ -162,7 +162,6 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
 
   return (
     <div ref={containerRef} className="relative flex items-center justify-center w-full h-full overflow-hidden">
-      <style>{'#composite-canvas img { object-fit: contain; background: white; }'}</style>
       <div style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}>
         <div 
           id="composite-canvas"
@@ -193,7 +192,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                       images.main.fitMode === 'contain' ? (
                         <img src={images.main.originalUrl || images.main.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                       ) : (
-                        <img src={images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
+                        <img src={images.main.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                       )
                     ) : (
                       <MainImagePlaceholder />
@@ -211,7 +210,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                         images.sub1.fitMode === 'contain' ? (
                           <img src={images.sub1.originalUrl || images.sub1.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                         ) : (
-                          <img src={images.sub1.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
+                          <img src={images.sub1.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                         )
                       ) : <SubImagePlaceholder index={1} />}
                     </div>
@@ -223,7 +222,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                         images.sub2.fitMode === 'contain' ? (
                           <img src={images.sub2.originalUrl || images.sub2.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                         ) : (
-                          <img src={images.sub2.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
+                          <img src={images.sub2.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                         )
                       ) : <SubImagePlaceholder index={2} />}
                     </div>
@@ -235,7 +234,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                         images.sub3.fitMode === 'contain' ? (
                           <img src={images.sub3.originalUrl || images.sub3.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                         ) : (
-                          <img src={images.sub3.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
+                          <img src={images.sub3.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                         )
                       ) : <SubImagePlaceholder index={3} />}
                     </div>
@@ -247,7 +246,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                         images.sub4.fitMode === 'contain' ? (
                           <img src={images.sub4.originalUrl || images.sub4.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                         ) : (
-                          <img src={images.sub4.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
+                          <img src={images.sub4.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                         )
                       ) : <SubImagePlaceholder index={4} />}
                     </div>
@@ -281,7 +280,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                   images.main.fitMode === 'contain' ? (
                     <img src={images.main.originalUrl || images.main.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                   ) : (
-                    <img src={images.main.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
+                    <img src={images.main.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-main', images.main) }} alt="Main composite" />
                   )
                 ) : (
                   <MainImagePlaceholder />
@@ -300,7 +299,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                     images.sub1.fitMode === 'contain' ? (
                       <img src={images.sub1.originalUrl || images.sub1.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                     ) : (
-                      <img src={images.sub1.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
+                      <img src={images.sub1.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub1', images.sub1) }} alt="Sub 1" />
                     )
                   ) : <SubImagePlaceholder index={1} />}
                 </div>
@@ -312,7 +311,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                     images.sub2.fitMode === 'contain' ? (
                       <img src={images.sub2.originalUrl || images.sub2.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                     ) : (
-                      <img src={images.sub2.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
+                      <img src={images.sub2.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub2', images.sub2) }} alt="Sub 2" />
                     )
                   ) : <SubImagePlaceholder index={2} />}
                 </div>
@@ -324,7 +323,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                     images.sub3.fitMode === 'contain' ? (
                       <img src={images.sub3.originalUrl || images.sub3.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                     ) : (
-                      <img src={images.sub3.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
+                      <img src={images.sub3.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub3', images.sub3) }} alt="Sub 3" />
                     )
                   ) : <SubImagePlaceholder index={3} />}
                 </div>
@@ -336,7 +335,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
                     images.sub4.fitMode === 'contain' ? (
                       <img src={images.sub4.originalUrl || images.sub4.croppedUrl!} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                     ) : (
-                      <img src={images.sub4.croppedUrl} className="w-full h-full object-cover" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
+                      <img src={images.sub4.croppedUrl} className="w-full h-full object-contain bg-white" style={{ filter: getImageFilter('preview-image-adjustment-sub4', images.sub4) }} alt="Sub 4" />
                     )
                   ) : <SubImagePlaceholder index={4} />}
                 </div>
