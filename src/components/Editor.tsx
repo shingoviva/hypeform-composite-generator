@@ -5,7 +5,7 @@ import Preview from './Preview';
 import jsPDF from 'jspdf';
 import { renderComposite } from '../exportComposite';
 import { frameWholeComposite } from '../instagramWhole';
-import { Share2, Download, X, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { Share2, Download, X, RotateCcw, SlidersHorizontal, LoaderCircle, Check } from 'lucide-react';
 import PreviewOptions from './PreviewOptions';
 import ImageCropperModal from './ImageCropperModal';
 import { UiLanguage } from '../App';
@@ -48,9 +48,23 @@ const t = {
 export default function Editor({ state, setState, uiLanguage, setUiLanguage, highResolution, setHighResolution, saveStatus, onReset }: EditorProps) {
   const lang = t[uiLanguage];
   const [isExporting, setIsExporting] = useState(false);
+  const exportBusy = useRef(false);
+  const optionsSession = useRef({ scrollTop: 0, open: [] as boolean[] });
+  const [visibleSaveStatus, setVisibleSaveStatus] = useState(saveStatus);
+  const [exportNotice, setExportNotice] = useState('');
+  useEffect(() => {
+    if (saveStatus !== 'saving') { setVisibleSaveStatus(saveStatus); return; }
+    const timer = window.setTimeout(() => setVisibleSaveStatus('saving'), 500);
+    return () => window.clearTimeout(timer);
+  }, [saveStatus]);
+  useEffect(() => {
+    if (!exportNotice) return;
+    const timer = window.setTimeout(() => setExportNotice(''), 4000);
+    return () => window.clearTimeout(timer);
+  }, [exportNotice]);
   const statusText = uiLanguage === 'ja'
-    ? { saving: '端末に保存中…', saved: '端末に保存済み', unavailable: '端末への保存不可' }[saveStatus]
-    : { saving: 'Saving locally...', saved: 'Saved on this device', unavailable: 'Local save unavailable' }[saveStatus];
+    ? { saving: '端末に保存中…', saved: '端末に保存済み', unavailable: '端末への保存不可' }[visibleSaveStatus]
+    : { saving: 'Saving locally...', saved: 'Saved on this device', unavailable: 'Local save unavailable' }[visibleSaveStatus];
   const [exportResult, setExportResult] = useState<{ file: File; url: string; format: 'pdf' | 'jpeg' } | null>(null);
   const [showPreviewOptions, setShowPreviewOptions] = useState(false);
   const [instagramResult, setInstagramResult] = useState<{ file: File; url: string; side: 'left' | 'right' | 'whole' }[] | null>(null);
@@ -158,6 +172,9 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
   };
 
   const performExport = async (format: 'pdf' | 'jpeg') => {
+    if (exportBusy.current) return;
+    exportBusy.current = true;
+    setExportNotice('');
     setIsExporting(true);
     
       try {
@@ -196,17 +213,21 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           link.click();
           window.setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
+        setExportNotice(uiLanguage === 'ja' ? '書き出し完了' : 'Export ready');
       } catch (error: any) {
         console.error('Export failed:', error);
         alert(`${uiLanguage === 'ja' ? '出力できませんでした' : 'Export failed'}: ${error?.message || String(error)}`);
       } finally {
+        exportBusy.current = false;
         setIsExporting(false);
       }
   };
 
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
   const performInstagramExport = async (mode: 'split' | 'whole' = 'split') => {
-    if (isExporting) return;
+    if (exportBusy.current) return;
+    exportBusy.current = true;
+    setExportNotice('');
     setIsExporting(true);
     const results: NonNullable<typeof instagramResult> = [];
     try {
@@ -224,11 +245,12 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
       }
       setShareError('');
       setInstagramResult(results);
+      setExportNotice(uiLanguage === 'ja' ? '書き出し完了' : 'Export ready');
       setShowPreviewOptions(false);
     } catch (error) {
       results.forEach(result => URL.revokeObjectURL(result.url));
       alert(`${uiLanguage === 'ja' ? '出力できませんでした' : 'Export failed'}: ${(error as Error).message}`);
-    } finally { setIsExporting(false); }
+    } finally { exportBusy.current = false; setIsExporting(false); }
   };
   const shareInstagram = async (file: File) => {
     try { setShareError(''); await navigator.share({ files: [file] }); }
@@ -237,6 +259,8 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
 
   return (
     <div className="flex flex-col lg:flex-row w-full h-full absolute inset-0 overflow-hidden bg-white">
+      {isExporting && <div className="absolute inset-0 z-[80] bg-white/80 flex items-center justify-center gap-2 text-sm" role="status"><LoaderCircle size={18} className="animate-spin motion-reduce:animate-none" />{lang.exporting}</div>}
+      {!isExporting && exportNotice && !exportResult && !instagramResult && <div role="status" className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[80] hidden lg:flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 shadow-sm text-xs pointer-events-none"><Check size={16} />{exportNotice}</div>}
       {/* Mobile Tabs */}
       <div className="lg:hidden flex border-b border-[#E5E5E5] shrink-0 bg-white z-20">
         <button 
@@ -270,7 +294,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           </select>
         </div>
         <div className="flex items-center justify-between gap-2 px-3 py-0 lg:px-6 lg:py-2 border-b border-[#E5E5E5] shrink-0">
-          <span role="status" className={`text-[10px] ${saveStatus === 'unavailable' ? 'text-amber-700' : 'text-gray-500'}`} title={uiLanguage === 'ja' ? 'ブラウザのデータ削除や端末の空き容量によって保存データが消える場合があります。' : 'Browser data removal or low device storage may remove the saved draft.'}>{statusText}</span>
+          <span role="status" className={`text-[10px] ${visibleSaveStatus === 'unavailable' ? 'text-amber-700' : 'text-gray-500'}`} title={uiLanguage === 'ja' ? 'ブラウザのデータ削除や端末の空き容量によって保存データが消える場合があります。' : 'Browser data removal or low device storage may remove the saved draft.'}>{statusText}</span>
           <button onClick={onReset} className="flex items-center gap-1 text-xs text-gray-500 hover:text-black min-h-9 shrink-0" title={uiLanguage === 'ja' ? 'すべての設定をリセット' : 'Reset all settings'}><RotateCcw size={14} />{uiLanguage === 'ja' ? 'リセット' : 'Reset'}</button>
         </div>
         <div className="flex-1 min-h-0 overflow-hidden w-full">
@@ -323,12 +347,12 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
                 <option value="ja">JP</option>
               </select>
               <div className="flex items-center text-[10px] uppercase font-bold">
-                <span className={`w-2 h-2 rounded-full ${saveStatus === 'saved' ? 'bg-green-500' : 'bg-amber-500'} mr-2`}></span><span className="hidden sm:inline">{statusText}</span>
+                <span className={`w-2 h-2 rounded-full ${visibleSaveStatus === 'saved' ? 'bg-green-500' : 'bg-amber-500'} mr-2`}></span><span className="hidden sm:inline">{statusText}</span>
               </div>
             </div>
           </div>
         </header>
-        {showPreviewOptions && <PreviewOptions state={state} setState={setState} language={uiLanguage} onClose={() => setShowPreviewOptions(false)} onInstagram={performInstagramExport} exporting={isExporting} />}
+        {showPreviewOptions && <PreviewOptions session={optionsSession} state={state} setState={setState} language={uiLanguage} onClose={() => setShowPreviewOptions(false)} onInstagram={performInstagramExport} exporting={isExporting} />}
 
         <div className="flex-1 min-h-0 flex items-center justify-center p-2 lg:p-12 overflow-hidden relative">
           <Preview state={state} onImageClick={handleImageClick} />

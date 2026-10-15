@@ -22,6 +22,18 @@ WebKit and Chromium passed draft restore (including photos and exposure), reset 
 
 An intermittent approximately 0.9px name-position change was observed during tab switching. Preview fitting now explicitly requests the font weights used by canvas glyph metrics and recalculates after they load, in addition to the existing font/layout observers. The transition comparison passed on both engines after the change. This does not establish native-device keyboard behavior or eliminate every possible regression.
 
-## Native Device Limitations
+## Keyboard Closing Transitions
+
+Mobile export actions and the keyboard-hidden header remain suspended after blur until visual viewport resizing has been quiet for 200ms. Moving directly between fields cancels the pending restoration; manual scrolling does not cancel it. The delayed 350ms focused-field correction is scheduled only while a text field is active, so it cannot trigger a second restoration cycle after blur.
+
+WebKit and Chromium checks simulate keyboard height recovery from 420 through 460, 540, 660, 780 and 844px, asserting that chrome stays hidden throughout resizing and returns after settling. They also cover refocusing another field before restoration and blur without a software keyboard. Native keyboard animation still requires device confirmation.
+
+## Quiet UI Feedback
+
+The preview adjustment panel keeps its expanded sections and scroll offset for the editor session. Escape restores focus without scrolling. Fast draft writes retain the last displayed save status; saving is shown only after 500ms, while success and storage errors update immediately. All export modes share a busy overlay and a synchronous duplicate-operation guard; mobile result dialogs retain their existing save/share actions, while desktop downloads show a brief completion notice.
+
+WebKit and Chromium checks cover quiet fast saves, panel close/reopen position and expanded sections, export completion and reopening the panel. Existing transition tests account for the remembered Instagram section rather than assuming it always starts collapsed.
+
+## Native Hardware Follow-Up
 
 Desktop WebKit does not reproduce the iPhone software keyboard or native Safari touch/bounce behavior. Its mobile scroll checks use DOM scrolling and viewport events; Chromium also uses wheel input. Actual iPhone/Android checks remain necessary: edit near the bottom, drag upward and downward with the keyboard open, dismiss/reopen it, rotate, switch tabs, open/close cropping, and repeat after restoring a saved draft. Browser chrome and safe-area insets can differ from emulated viewports.

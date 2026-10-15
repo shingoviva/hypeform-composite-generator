@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { X, Instagram } from 'lucide-react';
 import { AppState, ProfileData } from '../types';
 import { UiLanguage } from '../App';
@@ -15,16 +15,25 @@ interface Props {
   onClose: () => void;
   onInstagram: (mode?: 'split' | 'whole') => void;
   exporting: boolean;
+  session: React.MutableRefObject<{ scrollTop: number; open: boolean[] }>;
 }
 
-export default function PreviewOptions({ state, setState, language, onClose, onInstagram, exporting }: Props) {
+export default function PreviewOptions({ state, setState, language, onClose, onInstagram, exporting, session }: Props) {
   const ja = language === 'ja';
   const panelRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const panel = panelRef.current!;
+    panel.querySelectorAll('details').forEach((details, index) => { details.open = session.current.open[index] ?? false; });
+    panel.scrollTop = session.current.scrollTop;
+    return () => {
+      session.current = { scrollTop: panel.scrollTop, open: Array.from<HTMLDetailsElement, boolean>(panel.querySelectorAll('details'), details => details.open) };
+    };
+  }, [session]);
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
-        document.querySelector<HTMLButtonElement>('[aria-controls="preview-options"]')?.focus();
+        document.querySelector<HTMLButtonElement>('[aria-controls="preview-options"]')?.focus({ preventScroll: true });
       }
     };
     const outside = (event: PointerEvent) => {
@@ -55,8 +64,8 @@ export default function PreviewOptions({ state, setState, language, onClose, onI
       <details className="border-t border-gray-100 pt-3"><summary className="cursor-pointer font-medium flex items-center gap-2"><Instagram size={14} />{ja ? 'Instagram用に出力' : 'Instagram export'}</summary><div className="space-y-3 mt-3">
         <span className="text-gray-500">1080 × 1350 · 4:5</span>
         {(['margin', 'gap'] as const).map(key => <label key={key} className="block">{key === 'margin' ? (ja ? '外側の余白' : 'Outer margin') : (ja ? '写真の間隔' : 'Photo spacing')}<span className="float-right text-gray-500">{state.instagram?.[key] ?? (key === 'margin' ? 32 : 24)} px</span><SnapRange defaultValueNumber={key === 'margin' ? 32 : 24} aria-label={key === 'margin' ? 'Instagram margin' : 'Instagram spacing'} min={key === 'margin' ? 24 : 16} max={key === 'margin' ? 100 : 40} value={state.instagram?.[key] ?? (key === 'margin' ? 32 : 24)} onChange={e => setState(previous => ({ ...previous, instagram: { margin: previous.instagram?.margin ?? 32, gap: previous.instagram?.gap ?? 24, [key]: Number(e.target.value) } }))} className="w-full accent-black" /></label>)}
-        <button disabled={exporting} onClick={() => onInstagram('split')} className="w-full border border-gray-300 py-2 flex items-center justify-center gap-2 disabled:opacity-50"><Instagram size={16} />{exporting ? (ja ? '作成中…' : 'Preparing...') : (ja ? '左右2枚を作成' : 'Prepare two images')}</button>
-        <button disabled={exporting} onClick={() => onInstagram('whole')} className="w-full border border-gray-300 py-2 flex items-center justify-center gap-2 disabled:opacity-50"><Instagram size={16} />{exporting ? (ja ? '作成中…' : 'Preparing...') : (ja ? '全体を1枚で作成' : 'Prepare whole composite')}</button>
+        <button disabled={exporting} onClick={() => onInstagram('split')} className="w-full border border-gray-300 py-2 flex items-center justify-center gap-2 disabled:opacity-50"><Instagram size={16} />{exporting ? (ja ? '出力中...' : 'Exporting...') : (ja ? '左右2枚を作成' : 'Prepare two images')}</button>
+        <button disabled={exporting} onClick={() => onInstagram('whole')} className="w-full border border-gray-300 py-2 flex items-center justify-center gap-2 disabled:opacity-50"><Instagram size={16} />{exporting ? (ja ? '出力中...' : 'Exporting...') : (ja ? '全体を1枚で作成' : 'Prepare whole composite')}</button>
       </div></details>
     </div>
   </section>;

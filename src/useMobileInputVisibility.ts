@@ -8,7 +8,7 @@ export function useMobileInputVisibility() {
     const html = document.documentElement;
     let restingHeight = viewport?.height ?? window.innerHeight;
     let restingWidth = window.innerWidth;
-    let frame = 0, settle = 0;
+    let frame = 0, settle = 0, restoreChrome = 0;
     let followUntil = 0, manualScroll = false;
     const reveal = () => {
       if (performance.now() > followUntil || manualScroll) return;
@@ -39,13 +39,24 @@ export function useMobileInputVisibility() {
       const height = viewport?.height ?? window.innerHeight;
       if (!viewport || viewport.scale === 1) html.style.setProperty('--app-height', `${height}px`);
       const editing = textField(document.activeElement);
-      html.dataset.textEditing = String(editing);
+      const mobile = window.matchMedia('(max-width: 1023px)').matches;
+      window.clearTimeout(restoreChrome);
+      if (editing || !mobile) html.dataset.textEditing = String(editing);
+      else if (html.dataset.textEditing === 'true') {
+        // Restore chrome only after keyboard resizing and field-to-field focus settle.
+        restoreChrome = window.setTimeout(() => {
+          if (textField(document.activeElement)) return;
+          html.dataset.textEditing = 'false';
+          html.dataset.keyboardOpen = 'false';
+        }, 200);
+      }
       const widthChanged = window.innerWidth !== restingWidth;
       if (widthChanged) {
         restingWidth = window.innerWidth;
         restingHeight = Math.max(window.innerHeight, height);
       } else if (!editing) restingHeight = Math.max(restingHeight, height);
-      const keyboard = editing && window.matchMedia('(max-width: 1023px)').matches && (!viewport || viewport.scale === 1) && restingHeight - height > 120;
+      const closingKeyboard = mobile && !editing && html.dataset.textEditing === 'true' && html.dataset.keyboardOpen === 'true';
+      const keyboard = closingKeyboard || (editing && mobile && (!viewport || viewport.scale === 1) && restingHeight - height > 120);
       const keyboardOpening = keyboard && html.dataset.keyboardOpen !== 'true';
       html.dataset.keyboardOpen = String(keyboard);
       if (editing && (widthChanged || (keyboardOpening && !manualScroll))) followUntil = performance.now() + 900;
@@ -56,7 +67,7 @@ export function useMobileInputVisibility() {
       followUntil = textField(document.activeElement) ? performance.now() + 900 : 0;
       update();
       window.clearTimeout(settle);
-      settle = window.setTimeout(update, 350);
+      if (textField(document.activeElement)) settle = window.setTimeout(update, 350);
     };
     const stopFollowing = () => {
       manualScroll = true; followUntil = 0;
@@ -73,7 +84,7 @@ export function useMobileInputVisibility() {
     document.addEventListener('wheel', stopFollowing, { passive: true, capture: true });
     document.addEventListener('pointerdown', stopFollowing, true);
     return () => {
-      cancelAnimationFrame(frame); window.clearTimeout(settle);
+      cancelAnimationFrame(frame); window.clearTimeout(settle); window.clearTimeout(restoreChrome);
       viewport?.removeEventListener('resize', update);
       viewport?.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', update);
