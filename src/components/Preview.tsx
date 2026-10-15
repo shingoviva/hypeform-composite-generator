@@ -77,6 +77,12 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
       fitFrame = requestAnimationFrame(fitName);
     };
     fitAfterLayout();
+    // Canvas glyph metrics may request a weight that the initial DOM did not load.
+    const fontRequests = Array.from<HTMLElement>(containerRef.current?.querySelectorAll<HTMLElement>('[data-composite="name"], [data-composite="measurements"] span') ?? []).map(node => {
+      const style = getComputedStyle(node);
+      return document.fonts.load(`${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`, node.textContent || 'H');
+    });
+    Promise.all(fontRequests).then(() => { if (active) fitAfterLayout(); }).catch(() => {});
     document.fonts.ready.then(() => { if (active) fitAfterLayout(); });
     document.fonts.addEventListener('loadingdone', fitAfterLayout);
     const observer = new ResizeObserver(fitAfterLayout);

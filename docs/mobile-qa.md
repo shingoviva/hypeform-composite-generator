@@ -16,6 +16,12 @@ WebKit and Chromium checks cover English and Japanese at these CSS viewport size
 
 Checks include both scroll directions, editing area height, horizontal overflow, preview framing, layout-panel containment, crop action accessibility and export-button visibility. Low-height mobile screens use a one-line brand header while retaining language selection. Keyboard-shrink tests separately cover 390/320 widths, focused-field visibility, moving between fields and viewport panning. Additional checks cover PDF/JPEG image output and stable panel/tab/export/draft transitions after layout settling.
 
-## Hardware Follow-Up
+## Cross-Feature Regression Audit
+
+WebKit and Chromium passed draft restore (including photos and exposure), reset cancellation/confirmation, unavailable-storage fallback, precise zoom and crop retention, crop cancellation, synchronized form/preview controls, long-to-short contact transitions, ten fonts across margins and sizes, maximum watermark size/opacity with protected foreground, whole/split Instagram export, and embedded-photo PDF/JPEG output. Panel/tab/export/reload transitions were compared at 390 and 1440 CSS pixels.
+
+An intermittent approximately 0.9px name-position change was observed during tab switching. Preview fitting now explicitly requests the font weights used by canvas glyph metrics and recalculates after they load, in addition to the existing font/layout observers. The transition comparison passed on both engines after the change. This does not establish native-device keyboard behavior or eliminate every possible regression.
+
+## Native Device Limitations
 
 Desktop WebKit does not reproduce the iPhone software keyboard or native Safari touch/bounce behavior. Its mobile scroll checks use DOM scrolling and viewport events; Chromium also uses wheel input. Actual iPhone/Android checks remain necessary: edit near the bottom, drag upward and downward with the keyboard open, dismiss/reopen it, rotate, switch tabs, open/close cropping, and repeat after restoring a saved draft. Browser chrome and safe-area insets can differ from emulated viewports.
