@@ -9,7 +9,9 @@ export function useMobileInputVisibility() {
     let restingHeight = viewport?.height ?? window.innerHeight;
     let restingWidth = window.innerWidth;
     let frame = 0, settle = 0;
+    let followUntil = 0, manualScroll = false;
     const reveal = () => {
+      if (performance.now() > followUntil || manualScroll) return;
       if (!window.matchMedia('(max-width: 1023px)').matches || (viewport && viewport.scale !== 1)) return;
       const field = document.activeElement;
       if (!textField(field)) return;
@@ -29,6 +31,7 @@ export function useMobileInputVisibility() {
       }
     };
     const schedule = () => {
+      if (performance.now() > followUntil || manualScroll) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => { frame = requestAnimationFrame(reveal); });
     };
@@ -37,18 +40,27 @@ export function useMobileInputVisibility() {
       if (!viewport || viewport.scale === 1) html.style.setProperty('--app-height', `${height}px`);
       const editing = textField(document.activeElement);
       html.dataset.textEditing = String(editing);
-      if (window.innerWidth !== restingWidth) {
+      const widthChanged = window.innerWidth !== restingWidth;
+      if (widthChanged) {
         restingWidth = window.innerWidth;
         restingHeight = Math.max(window.innerHeight, height);
       } else if (!editing) restingHeight = Math.max(restingHeight, height);
       const keyboard = editing && window.matchMedia('(max-width: 1023px)').matches && (!viewport || viewport.scale === 1) && restingHeight - height > 120;
+      const keyboardOpening = keyboard && html.dataset.keyboardOpen !== 'true';
       html.dataset.keyboardOpen = String(keyboard);
+      if (editing && (widthChanged || (keyboardOpening && !manualScroll))) followUntil = performance.now() + 900;
       schedule();
     };
     const focus = () => {
+      manualScroll = false;
+      followUntil = textField(document.activeElement) ? performance.now() + 900 : 0;
       update();
       window.clearTimeout(settle);
       settle = window.setTimeout(update, 350);
+    };
+    const stopFollowing = () => {
+      manualScroll = true; followUntil = 0;
+      cancelAnimationFrame(frame); window.clearTimeout(settle);
     };
     update();
     viewport?.addEventListener('resize', update);
@@ -56,6 +68,10 @@ export function useMobileInputVisibility() {
     window.addEventListener('resize', update);
     document.addEventListener('focusin', focus);
     document.addEventListener('focusout', focus);
+    document.addEventListener('touchstart', stopFollowing, { passive: true, capture: true });
+    document.addEventListener('touchmove', stopFollowing, { passive: true, capture: true });
+    document.addEventListener('wheel', stopFollowing, { passive: true, capture: true });
+    document.addEventListener('pointerdown', stopFollowing, true);
     return () => {
       cancelAnimationFrame(frame); window.clearTimeout(settle);
       viewport?.removeEventListener('resize', update);
@@ -63,6 +79,10 @@ export function useMobileInputVisibility() {
       window.removeEventListener('resize', update);
       document.removeEventListener('focusin', focus);
       document.removeEventListener('focusout', focus);
+      document.removeEventListener('touchstart', stopFollowing, true);
+      document.removeEventListener('touchmove', stopFollowing, true);
+      document.removeEventListener('wheel', stopFollowing, true);
+      document.removeEventListener('pointerdown', stopFollowing, true);
       html.style.removeProperty('--app-height'); delete html.dataset.keyboardOpen; delete html.dataset.textEditing;
     };
   }, []);

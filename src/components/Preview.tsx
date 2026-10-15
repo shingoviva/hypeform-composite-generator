@@ -62,6 +62,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   };
   useLayoutEffect(() => {
     let active = true;
+    let fitFrame = 0;
     const fitName = () => {
       if (!active) return;
       const name = containerRef.current?.querySelector<HTMLElement>('[data-composite="name"]');
@@ -70,12 +71,17 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
       const root = containerRef.current?.querySelector<HTMLElement>('#composite-canvas');
       if (root) applyCompositeTypography(root, state);
     };
-    fitName();
-    document.fonts.ready.then(fitName);
-    document.fonts.addEventListener('loadingdone', fitName);
-    const observer = new ResizeObserver(fitName);
+    const fitAfterLayout = () => {
+      fitName();
+      cancelAnimationFrame(fitFrame);
+      fitFrame = requestAnimationFrame(fitName);
+    };
+    fitAfterLayout();
+    document.fonts.ready.then(() => { if (active) fitAfterLayout(); });
+    document.fonts.addEventListener('loadingdone', fitAfterLayout);
+    const observer = new ResizeObserver(fitAfterLayout);
     if (containerRef.current) observer.observe(containerRef.current);
-    return () => { active = false; observer.disconnect(); document.fonts.removeEventListener('loadingdone', fitName); };
+    return () => { active = false; cancelAnimationFrame(fitFrame); observer.disconnect(); document.fonts.removeEventListener('loadingdone', fitAfterLayout); };
   }, [state, scale]);
   const watermarkSize = state.watermark.size ?? 100;
   const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
