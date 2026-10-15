@@ -3,25 +3,13 @@ import { AppState } from './types';
 import Editor from './components/Editor';
 import { DEFAULT_STATE, getInitialAppState } from './demoFixtures';
 import { loadDraft, saveDraft } from './draftStorage';
+import { useMobileInputVisibility } from './useMobileInputVisibility';
 
 export type UiLanguage = 'en' | 'ja';
 const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD?.trim() || '';
 
 export default function App() {
-  useEffect(() => {
-    const viewport = window.visualViewport;
-    const update = () => {
-      if (viewport && viewport.scale === 1) {
-        document.documentElement.style.setProperty('--app-height', `${viewport.height}px`);
-      }
-    };
-    update();
-    viewport?.addEventListener('resize', update);
-    return () => {
-      viewport?.removeEventListener('resize', update);
-      document.documentElement.style.removeProperty('--app-height');
-    };
-  }, []);
+  useMobileInputVisibility();
   const [isAuthenticated, setIsAuthenticated] = useState(APP_PASSWORD === '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);

@@ -255,7 +255,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
 
       {/* Left Sidebar */}
       <aside className={`${mobileTab === 'edit' ? 'flex' : 'hidden'} lg:flex w-full lg:w-80 flex-1 min-h-0 lg:flex-none lg:h-full bg-white lg:border-r lg:border-[#E5E5E5] flex-col z-10 relative`}>
-        <div className="p-6 border-b border-[#E5E5E5] shrink-0 flex items-start justify-between">
+        <div className="mobile-brand-header p-6 border-b border-[#E5E5E5] shrink-0 flex items-start justify-between">
           <div className="min-w-0">
             <h1 className="text-lg font-bold leading-snug">Hypeform{' '}<span className="block text-sm font-semibold">Composite Generator</span></h1>
           </div>
@@ -273,7 +273,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           <span role="status" className={`text-[10px] ${saveStatus === 'unavailable' ? 'text-amber-700' : 'text-gray-500'}`} title={uiLanguage === 'ja' ? 'ブラウザのデータ削除や端末の空き容量によって保存データが消える場合があります。' : 'Browser data removal or low device storage may remove the saved draft.'}>{statusText}</span>
           <button onClick={onReset} className="flex items-center gap-1 text-xs text-gray-500 hover:text-black min-h-9 shrink-0" title={uiLanguage === 'ja' ? 'すべての設定をリセット' : 'Reset all settings'}><RotateCcw size={14} />{uiLanguage === 'ja' ? 'リセット' : 'Reset'}</button>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto w-full">
+        <div className="flex-1 min-h-0 overflow-hidden w-full">
           <Form state={state} setState={setState} onImageClick={handleImageClick} uiLanguage={uiLanguage} />
         </div>
         {/* Desktop Export Buttons */}
@@ -344,7 +344,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
 
       {/* Mobile Export Buttons */}
       <div 
-        className="lg:hidden flex flex-col gap-3 p-4 bg-gray-50 border-t border-[#E5E5E5] shrink-0 z-50 w-full"
+        className="mobile-export-actions lg:hidden flex flex-col gap-3 p-4 bg-gray-50 border-t border-[#E5E5E5] shrink-0 z-50 w-full"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
         <label className="flex items-center gap-2 cursor-pointer justify-center mb-1">
