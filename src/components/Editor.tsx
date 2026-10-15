@@ -240,13 +240,13 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
       {/* Mobile Tabs */}
       <div className="lg:hidden flex border-b border-[#E5E5E5] shrink-0 bg-white z-20">
         <button 
-          className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'edit' ? 'border-b-2 border-black text-black' : 'text-gray-400'}`}
+          className={`flex-1 min-h-10 py-2 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'edit' ? 'border-b-2 border-black text-black' : 'text-gray-400'}`}
           onClick={() => setMobileTab('edit')}
         >
           {lang.editProfile}
         </button>
         <button 
-          className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'preview' ? 'border-b-2 border-black text-black' : 'text-gray-400'}`}
+          className={`flex-1 min-h-10 py-2 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'preview' ? 'border-b-2 border-black text-black' : 'text-gray-400'}`}
           onClick={() => setMobileTab('preview')}
         >
           {lang.previewCanvas}
@@ -255,9 +255,9 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
 
       {/* Left Sidebar */}
       <aside className={`${mobileTab === 'edit' ? 'flex' : 'hidden'} lg:flex w-full lg:w-80 flex-1 min-h-0 lg:flex-none lg:h-full bg-white lg:border-r lg:border-[#E5E5E5] flex-col z-10 relative`}>
-        <div className="mobile-brand-header p-6 border-b border-[#E5E5E5] shrink-0 flex items-start justify-between">
+        <div className="mobile-brand-header px-3 py-2 lg:p-6 border-b border-[#E5E5E5] shrink-0 flex items-center lg:items-start justify-between">
           <div className="min-w-0">
-            <h1 className="text-lg font-bold leading-snug">Hypeform{' '}<span className="block text-sm font-semibold">Composite Generator</span></h1>
+            <h1 className="text-sm lg:text-lg font-bold leading-snug">Hypeform{' '}<span className="block text-xs lg:text-sm font-semibold">Composite Generator</span></h1>
           </div>
           <select 
             value={uiLanguage}
@@ -269,7 +269,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
             <option value="ja">JP</option>
           </select>
         </div>
-        <div className="flex items-center justify-between gap-2 px-6 py-2 border-b border-[#E5E5E5] shrink-0">
+        <div className="flex items-center justify-between gap-2 px-3 py-0 lg:px-6 lg:py-2 border-b border-[#E5E5E5] shrink-0">
           <span role="status" className={`text-[10px] ${saveStatus === 'unavailable' ? 'text-amber-700' : 'text-gray-500'}`} title={uiLanguage === 'ja' ? 'ブラウザのデータ削除や端末の空き容量によって保存データが消える場合があります。' : 'Browser data removal or low device storage may remove the saved draft.'}>{statusText}</span>
           <button onClick={onReset} className="flex items-center gap-1 text-xs text-gray-500 hover:text-black min-h-9 shrink-0" title={uiLanguage === 'ja' ? 'すべての設定をリセット' : 'Reset all settings'}><RotateCcw size={14} />{uiLanguage === 'ja' ? 'リセット' : 'Reset'}</button>
         </div>
@@ -306,12 +306,12 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
 
       {/* Main Area */}
       <main className={`${mobileTab === 'preview' ? 'flex' : 'hidden'} lg:flex flex-1 min-h-0 flex-col relative overflow-hidden bg-[#F8F8F8] w-full`}>
-        <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
+        <header className="h-11 lg:h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-3 lg:px-8 z-10 shrink-0">
           <div className="flex items-center space-y-1 overflow-hidden">
             <span className="text-[10px] uppercase font-bold tracking-widest truncate">{lang.previewing}: {state.profile.name || 'Composite'}_zedcard.pdf</span>
           </div>
-          <div className="flex space-x-4 shrink-0 pl-2">
-            <div className="flex items-center gap-4">
+          <div className="flex shrink-0 pl-1 lg:pl-2">
+            <div className="flex items-center gap-2 lg:gap-4">
               <button onClick={() => setShowPreviewOptions(value => !value)} aria-expanded={showPreviewOptions} aria-controls="preview-options" aria-label={uiLanguage === 'ja' ? 'レイアウト調整' : 'Layout adjustments'} title={uiLanguage === 'ja' ? 'レイアウト調整' : 'Layout adjustments'} className={`p-2 rounded ${showPreviewOptions ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-black'}`}><SlidersHorizontal size={18} /></button>
               <select 
                 value={uiLanguage}
@@ -330,7 +330,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
         </header>
         {showPreviewOptions && <PreviewOptions state={state} setState={setState} language={uiLanguage} onClose={() => setShowPreviewOptions(false)} onInstagram={performInstagramExport} exporting={isExporting} />}
 
-        <div className="flex-1 min-h-0 flex items-center justify-center p-4 lg:p-12 overflow-hidden relative">
+        <div className="flex-1 min-h-0 flex items-center justify-center p-2 lg:p-12 overflow-hidden relative">
           <Preview state={state} onImageClick={handleImageClick} />
         </div>
         
@@ -344,10 +344,10 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
 
       {/* Mobile Export Buttons */}
       <div 
-        className="mobile-export-actions lg:hidden flex flex-col gap-3 p-4 bg-gray-50 border-t border-[#E5E5E5] shrink-0 z-50 w-full"
-        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        className="mobile-export-actions lg:hidden flex flex-col gap-1 px-3 pt-1 bg-gray-50 border-t border-[#E5E5E5] shrink-0 z-50 w-full"
+        style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
       >
-        <label className="flex items-center gap-2 cursor-pointer justify-center mb-1">
+        <label className="flex items-center gap-2 cursor-pointer justify-center min-h-6">
           <input 
             type="checkbox" 
             checked={highResolution}
@@ -356,18 +356,18 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           />
           <span className="text-[10px] uppercase font-bold tracking-widest text-gray-600">{lang.highResolution}</span>
         </label>
-        <div className="flex gap-3 w-full">
+        <div className="flex gap-2 w-full">
           <button 
             onClick={() => performExport('pdf')}
             disabled={isExporting}
-            className="flex-1 bg-black text-white py-3 px-2 text-[10px] uppercase font-bold tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50 cursor-pointer text-center"
+            className="flex-1 min-h-10 bg-black text-white py-2 px-2 text-[10px] uppercase font-bold tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50 cursor-pointer text-center"
           >
             {isExporting ? lang.exporting : lang.exportPdf}
           </button>
           <button 
             onClick={() => performExport('jpeg')}
             disabled={isExporting}
-            className="flex-1 border border-black text-black bg-white py-3 px-2 text-[10px] uppercase font-bold tracking-widest hover:bg-black hover:text-white transition-colors disabled:opacity-50 cursor-pointer text-center"
+            className="flex-1 min-h-10 border border-black text-black bg-white py-2 px-2 text-[10px] uppercase font-bold tracking-widest hover:bg-black hover:text-white transition-colors disabled:opacity-50 cursor-pointer text-center"
           >
             {isExporting ? lang.exporting : lang.exportJpeg}
           </button>

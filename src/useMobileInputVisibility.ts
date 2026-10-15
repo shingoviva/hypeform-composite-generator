@@ -36,6 +36,7 @@ export function useMobileInputVisibility() {
       const height = viewport?.height ?? window.innerHeight;
       if (!viewport || viewport.scale === 1) html.style.setProperty('--app-height', `${height}px`);
       const editing = textField(document.activeElement);
+      html.dataset.textEditing = String(editing);
       if (window.innerWidth !== restingWidth) {
         restingWidth = window.innerWidth;
         restingHeight = Math.max(window.innerHeight, height);
@@ -62,7 +63,7 @@ export function useMobileInputVisibility() {
       window.removeEventListener('resize', update);
       document.removeEventListener('focusin', focus);
       document.removeEventListener('focusout', focus);
-      html.style.removeProperty('--app-height'); delete html.dataset.keyboardOpen;
+      html.style.removeProperty('--app-height'); delete html.dataset.keyboardOpen; delete html.dataset.textEditing;
     };
   }, []);
 }

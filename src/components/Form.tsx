@@ -191,7 +191,7 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
   const watermarkFileRef = React.useRef<HTMLInputElement>(null);
 
   return (
-    <div className="profile-form w-full h-full overflow-y-auto p-6 bg-white custom-scrollbar">
+    <div className="profile-form w-full h-full overflow-y-auto p-4 lg:p-6 bg-white custom-scrollbar">
       <div className="space-y-8">
         
         {/* Profile Info Section */}
