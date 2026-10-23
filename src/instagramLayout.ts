@@ -14,12 +14,18 @@ export function layoutInstagram(target: HTMLElement, state: AppState, side: 'lef
   const measurements = get('measurements')!;
   const details = get('details')!;
   const watermark = get('watermark');
+  const hasSocial = !!contact?.querySelector('[data-social="instagram"]');
   const header = document.createElement('div');
-  header.style.cssText = `flex-shrink:0;text-align:center;height:${side === 'left' ? 96 : 64}px;display:flex;flex-direction:column;justify-content:center;overflow:hidden`;
+  header.style.cssText = `flex-shrink:0;text-align:center;height:${side === 'left' || hasSocial ? 96 : 64}px;display:flex;flex-direction:column;justify-content:center;overflow:hidden`;
   header.append(name);
   if (side === 'left' && contact) {
     contact.style.cssText = 'font-size:14px;line-height:1.5;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;white-space:normal;overflow-wrap:anywhere';
     header.append(contact);
+  }
+  if (side === 'right' && contact?.querySelector('[data-social="instagram"]')) {
+    const social = document.createElement('p'); social.dataset.composite = 'contact';social.style.cssText = 'display:flex;justify-content:center;flex-wrap:wrap;text-align:center';
+    social.append(contact.querySelector('[data-social="instagram"]')!.cloneNode(true));
+    header.append(social);
   }
   const body = side === 'left' ? main : gallery;
   body.style.cssText = side === 'left'

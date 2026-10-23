@@ -9,7 +9,10 @@ export interface ProfileData {
   showContact: boolean;
   email: string;
   showEmail: boolean;
+  instagram?: string;
+  showInstagram?: boolean;
   agency: string;
+  showAgency?: boolean;
   
   height: string;
   bust: string;

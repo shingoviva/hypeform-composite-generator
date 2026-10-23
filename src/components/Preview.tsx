@@ -6,6 +6,7 @@ import { getNameTypography } from '../nameTypography';
 import { getCompositeLayout } from '../compositeLayout';
 import { applyCompositeTypography } from '../compositeTypography';
 import CompositeWatermark from './CompositeWatermark';
+import { instagramLabel } from '../socialProfile';
 
 interface PreviewProps {
   state: AppState;
@@ -121,7 +122,8 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const contactParts = [];
   if (profile.showContact && profile.contact) contactParts.push(`CONTACT: ${profile.contact}`);
   if (profile.showEmail && profile.email) contactParts.push(`EMAIL: ${profile.email}`);
-  if (profile.agency) contactParts.push(`REPRESENTED BY: ${profile.agency}`);
+  if (profile.showInstagram && instagramLabel(profile.instagram)) contactParts.push(`INSTAGRAM: ${instagramLabel(profile.instagram)}`);
+  if ((profile.showAgency ?? true) && profile.agency) contactParts.push(`REPRESENTED BY: ${profile.agency}`);
 
   const renderNameAndContact = () => (
     <>
@@ -133,7 +135,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
       </h1>
       {contactParts.length > 0 && (
         <p data-composite="contact" className="font-sans text-[0.6rem] font-bold tracking-normal uppercase flex flex-wrap justify-center gap-x-1.5 gap-y-1 whitespace-normal break-words shrink-0" style={{ lineHeight: 1.5, paddingBottom: 4 }}>
-          {contactParts.map(part => <span key={part}>{part}</span>)}
+          {contactParts.map(part => <span data-social={part.startsWith('INSTAGRAM:') ? 'instagram' : undefined} className={part.startsWith('INSTAGRAM:') ? 'normal-case' : undefined} key={part}>{part}</span>)}
         </p>
       )}
     </>

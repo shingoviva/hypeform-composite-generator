@@ -7,6 +7,7 @@ import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
 import CompositeWatermark from './CompositeWatermark';
 import { applyWatermarkLayout } from '../watermarkLayout';
+import { instagramLabel } from '../socialProfile';
 
 export default function SecondPagePreview({ state, onImageClick }: { state: AppState; onImageClick: (id: string) => void }) {
   const container = useRef<HTMLDivElement>(null);
@@ -65,8 +66,9 @@ export default function SecondPagePreview({ state, onImageClick }: { state: AppS
             })}
           </div>)}
         </div>
-        <div style={{ position: 'absolute', zIndex: 1, backgroundColor: '#ffffff', left: (1123 - gridWidth) / 2, top: layout.margin + cellWidth / .8 * 2 + gap + 16, width: gridWidth, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ position: 'absolute', zIndex: 1, backgroundColor: '#ffffff', left: (1123 - gridWidth) / 2, top: layout.margin + cellWidth / .8 * 2 + gap + 16, width: gridWidth, display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
           <div data-composite="name" data-page2-label="24" style={{ flex: 1, minWidth: 0, fontFamily: typography.font.family, fontWeight: typography.font.weight, fontStyle: state.profile.nameItalic ? 'italic' : 'normal', fontSize: 24, lineHeight: '32px', letterSpacing: `${typography.spacing}em`, whiteSpace: 'nowrap' }}>{state.profile.name}</div>
+          {state.profile.showInstagram && instagramLabel(state.profile.instagram) && <p data-composite="contact" style={{ fontSize: 10, lineHeight: 1.4, margin: 0 }}><span data-social="instagram">INSTAGRAM: {instagramLabel(state.profile.instagram)}</span></p>}
         </div>
         <CompositeWatermark state={state} onLoad={() => {
           const root = container.current?.querySelector<HTMLElement>('#composite-canvas-page2');

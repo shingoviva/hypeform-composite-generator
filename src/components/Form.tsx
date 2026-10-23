@@ -247,7 +247,14 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
               </div>
             </div>
             <div>
-              <label className="block text-[10px] uppercase text-gray-400 mb-1">{lang.agency}</label>
+              <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-1">
+                <span>Instagram</span>
+                <input type="checkbox" name="showInstagram" aria-label={uiLanguage === 'ja' ? 'Instagramを表示' : 'Show Instagram'} checked={!!state.profile.showInstagram} onChange={handleToggle} className="accent-black" />
+              </label>
+              <input type="text" name="instagram" aria-label="Instagram" placeholder="@account" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={state.profile.instagram || ''} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
+            </div>
+            <div>
+              <label className="flex items-center justify-between text-[10px] uppercase text-gray-400 mb-1"><span>{lang.agency}</span><input type="checkbox" name="showAgency" aria-label={uiLanguage === 'ja' ? '所属を表示' : 'Show agency'} checked={state.profile.showAgency ?? true} onChange={handleToggle} className="accent-black" /></label>
               <input type="text" aria-label={lang.agency} name="agency" value={state.profile.agency} onChange={handleProfileChange} className="w-full border-b border-gray-200 py-1 focus:border-black outline-none transition-colors text-sm font-medium bg-transparent" />
             </div>
           </div>

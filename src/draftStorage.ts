@@ -5,7 +5,7 @@ export interface Draft {
   uiLanguage: 'en' | 'ja';
   highResolution: boolean;
 }
-interface StoredDraft extends Draft {
+export interface StoredDraft extends Draft {
   version: 1;
   assets: Record<string, { bytes: ArrayBuffer; type: string }>;
 }
@@ -14,6 +14,10 @@ const key = new URLSearchParams(window.location.search).get('demo')
 let database: Promise<IDBDatabase> | undefined;
 let operations: Promise<unknown> = Promise.resolve();
 const assetCache = new Map<string, { bytes: ArrayBuffer; type: string }>();
+
+export function forgetDraftAssets(draft: Draft) {
+  for (const url of imageUrls(draft.state)) if (url) assetCache.delete(url);
+}
 
 function openDatabase() {
   if (!database) database = new Promise((resolve, reject) => {
@@ -29,11 +33,11 @@ function openDatabase() {
   return database;
 }
 
-function imageUrls(state: AppState) {
+export function imageUrls(state: AppState) {
   return [state.watermark.imageUrl, ...Object.values(state.images).flatMap(image => [image.originalUrl, image.croppedUrl])];
 }
 
-function replaceUrls(state: AppState, replace: (url: string | null) => string | null): AppState {
+export function replaceUrls(state: AppState, replace: (url: string | null) => string | null): AppState {
   const next = structuredClone(state);
   next.watermark.imageUrl = replace(next.watermark.imageUrl);
   for (const image of Object.values(next.images)) {
@@ -51,6 +55,10 @@ export async function loadDraft(): Promise<Draft | null> {
     request.onerror = () => reject(request.error);
   });
   if (!stored) return null;
+  return restoreStoredDraft(stored);
+}
+
+export function restoreStoredDraft(stored: StoredDraft): Draft {
   if (stored.version !== 1 || !stored.state?.profile || !stored.state?.watermark ||
       !['main', 'sub1', 'sub2', 'sub3', 'sub4'].every(id => stored.state.images?.[id])) {
     throw new Error('Invalid saved draft');
@@ -76,30 +84,42 @@ export async function loadDraft(): Promise<Draft | null> {
   }
 }
 
-export function saveDraft(draft: Draft): Promise<void> {
-  // Serialize writes so a slow photo save cannot overwrite a later reset.
-  const operation = operations.catch(() => {}).then(async () => {
-    const db = await openDatabase();
+export async function serializeDraft(draft: Draft): Promise<StoredDraft> {
     const assets: StoredDraft['assets'] = {};
     const references = new Map<string, string>();
-    for (const url of imageUrls(draft.state)) {
-      if (!url || references.has(url)) continue;
+    const urls = [...new Set(imageUrls(draft.state).filter((url): url is string => !!url))];
+    // Start reads before a later edit can release an obsolete object URL.
+    const reads = urls.map(async url => {
+      const cached = assetCache.get(url);
+      if (cached) return cached;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Photo unavailable');
+      const blob = await response.blob();
+      const asset = { bytes: await blob.arrayBuffer(), type: blob.type };
+      assetCache.set(url, asset);
+      return asset;
+    });
+    const loaded = await Promise.all(reads);
+    for (const [index, url] of urls.entries()) {
       const reference = `asset:${references.size}`;
-      let asset = assetCache.get(url);
-      if (!asset) {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Photo unavailable');
-        const blob = await response.blob();
-        asset = { bytes: await blob.arrayBuffer(), type: blob.type };
-        assetCache.set(url, asset);
-      }
       references.set(url, reference);
-      assets[reference] = asset;
+      assets[reference] = loaded[index];
     }
     const record: StoredDraft = {
       ...draft, version: 1, assets,
       state: replaceUrls(draft.state, url => url ? references.get(url)! : null)
     };
+    for (const url of assetCache.keys()) if (!references.has(url)) assetCache.delete(url);
+    return record;
+}
+
+export function saveDraft(draft: Draft): Promise<void> {
+  const prepared = serializeDraft(draft);
+  void prepared.catch(() => {});
+  // Serialize writes so a slow photo save cannot overwrite a later reset.
+  const operation = operations.catch(() => {}).then(async () => {
+    const record = await prepared;
+    const db = await openDatabase();
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction('drafts', 'readwrite');
       transaction.objectStore('drafts').put(record, key);
@@ -107,7 +127,6 @@ export function saveDraft(draft: Draft): Promise<void> {
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error || new Error('Draft save aborted'));
     });
-    for (const url of assetCache.keys()) if (!references.has(url)) assetCache.delete(url);
   });
   operations = operation;
   return operation;
