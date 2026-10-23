@@ -49,6 +49,8 @@ The optional model Instagram field is part of both personal and CSV profiles. It
 
 Instagram accepts a bare account name, @account, or an Instagram profile URL (including a URL without https://), and consistently displays @account. Agency visibility is optional in both the editor and preview controls; hiding it retains its text. The show_agency CSV column uses 1/0 and is preserved in editing ZIPs. Older personal drafts retain their agency display; older CSVs without this column show a nonempty agency automatically. Regression coverage includes these input forms, visibility persistence and CSV/ZIP round trips.
 
+Model switching preserves the editor DOM, form scroll position and preview sizing instead of remounting the editor. The current model remains visible while the next model's photos and name font are decoded; only a delayed, compact loading label appears for slower switches. Failed decoding leaves the previous model usable. Switching is blocked during crop/import/export dialogs and ongoing image editing or export. Run npm run test:agency-transition to monitor each animation frame across repeated switches, different page counts and simulated decode failure in WebKit and Chromium.
+
 ## Dependency Audit
 
 The added CSV/ZIP packages have no advisories in the install-time npm audit. The existing dependency tree reports 18 advisories, including a critical proxy-addr advisory in Express's server-side dependency tree. The deployed application is static; this change does not add an Express server. Those pre-existing dependencies have not been broadly upgraded in this feature change and should receive a separate maintenance review before adding any server deployment.

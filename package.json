@@ -10,7 +10,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test:agency": "node tests/agency-browser.mjs",
-    "test:instagram-profile": "node tests/instagram-profile-browser.mjs"
+    "test:instagram-profile": "node tests/instagram-profile-browser.mjs",
+    "test:agency-transition": "node tests/agency-transition-browser.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

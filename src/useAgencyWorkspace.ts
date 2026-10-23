@@ -4,6 +4,21 @@ import { Draft, loadDraft, saveDraft, serializeDraft, imageUrls, forgetDraftAsse
 import { AgencyConflict, AgencyEntry, AgencyWorkspace, discardStaging, loadModel, modelKey, readEntries, readModel, readWorkspace, writeModel, writeWorkspace } from './agencyStorage';
 import { AgencyImport, exportAgencyZip, matchingCachedEntry } from './agencyArchive';
 import { blankModel } from './agencyCsv';
+import { getNameTypography } from './nameTypography';
+
+async function prepareModel(draft: Draft) {
+  const { state } = draft;
+  const urls = new Set(Object.values(state.images).filter(image => state.secondPageEnabled || !image.id.startsWith('page2-')).map(image => image.croppedUrl || image.originalUrl).filter(Boolean));
+  if (state.watermark.enabled && state.watermark.type === 'image' && state.watermark.imageUrl) urls.add(state.watermark.imageUrl);
+  const images = Array.from(urls, url => { const image = new Image(); image.src = url!; return image; });
+  const { font } = getNameTypography(state.profile);
+  // Keep the current editor visible until the next preview can paint complete photos.
+  await Promise.all([
+    ...images.map(image => image.decode()),
+    document.fonts.load(`${state.profile.nameItalic ? 'italic' : 'normal'} ${font.weight} 52px ${font.family}`, state.profile.name || 'NAME').catch(() => []),
+  ]);
+  return images;
+}
 
 const desktop = () => window.matchMedia('(min-width:1024px)').matches;
 const preferredLanguage = (fallback:'en'|'ja') => {
@@ -15,7 +30,7 @@ const remembered = (workspace:AgencyWorkspace) => {try{return sessionStorage.get
 
 export function useAgencyWorkspace() {
   const [draft,setDraft] = useState<Draft>(()=>({state:getInitialAppState(),uiLanguage:preferredLanguage('en'),highResolution:false}));
-  const [ready,setReady]=useState(false),[busy,setBusy]=useState(false);
+  const [ready,setReady]=useState(false),[busy,setBusy]=useState(false),[switching,setSwitching]=useState(false);
   const [saveStatus,setSaveStatus]=useState<'saving'|'saved'|'unavailable'>('saving');
   const [workspace,setWorkspace]=useState<AgencyWorkspace|null>(null),[entries,setEntries]=useState<AgencyEntry[]>([]);
   const [enabled,setEnabled]=useState(false),[activeId,setActiveId]=useState<string|null>(null);
@@ -93,11 +108,11 @@ export function useAgencyWorkspace() {
     return()=>{window.clearTimeout(timer);window.removeEventListener('pagehide',flush);document.removeEventListener('visibilitychange',hidden);};
   },[draft,ready,busy,conflict,activeId]);
 
-  const adopt=(next:Draft,entry:AgencyEntry|null)=>{
+  const adopt=(next:Draft,entry:AgencyEntry|null,preserveEditor=false)=>{
     next={...next,uiLanguage:draftRef.current.uiLanguage};
     forgetDraftAssets(draftRef.current);
     activeRef.current=entry;draftRef.current=next;dirty.current=false;
-    setDraft(next);setActiveId(entry?.id??null);setConflict(false);conflictRef.current=false;setError('');setSaveStatus('saved');setEditorVersion(version=>version+1);
+    setDraft(next);setActiveId(entry?.id??null);setConflict(false);conflictRef.current=false;setError('');setSaveStatus('saved');if(!preserveEditor)setEditorVersion(version=>version+1);
   };
   useEffect(()=>{
     if(!ready)return;
@@ -128,9 +143,9 @@ export function useAgencyWorkspace() {
     return()=>{alive=false;channel.current?.close();channel.current=null;window.removeEventListener('storage',storage);window.removeEventListener('focus',focus);};
   },[ready]);
 
-  const run=async(action:()=>Promise<void>)=>{
-    if(busyRef.current)return;busyRef.current=true;setBusy(true);setError('');
-    try{await action();}catch(problem){report(problem);}finally{busyRef.current=false;setBusy(false);setProgress('');}
+  const run=async(action:()=>Promise<void>,quiet=false)=>{
+    if(busyRef.current)return;busyRef.current=true;setBusy(true);setSwitching(quiet);setError('');
+    try{await action();}catch(problem){report(problem);}finally{busyRef.current=false;setBusy(false);setSwitching(false);setProgress('');}
   };
   const flush=async()=>{await queue.current.catch(()=>{});if(dirty.current)await saveNow();};
   const toggle=(value:boolean)=>run(async()=>{
@@ -152,8 +167,12 @@ export function useAgencyWorkspace() {
   });
   const switchModel=(id:string)=>run(async()=>{
     if(id===activeRef.current?.id||!workspaceRef.current)return;
-    await flush();const saved=await loadModel(modelKey(workspaceRef.current,id));remember(workspaceRef.current,id);adopt(saved.draft,saved.entry);
-  });
+    if(document.querySelector('[data-editor-busy="true"], [role="dialog"], .cropper-modal-overlay'))return;
+    await flush();const saved=await loadModel(modelKey(workspaceRef.current,id));
+    try { await prepareModel(saved.draft); }
+    catch(problem) { release(saved.draft);throw problem; }
+    remember(workspaceRef.current,id);adopt(saved.draft,saved.entry,true);
+  },true);
   const importModels=(plan:AgencyImport,preferCache:boolean)=>run(async()=>{
     await flush();
     const previous=workspaceRef.current,oldEntries=previous?await readEntries(previous):[];
@@ -197,5 +216,5 @@ export function useAgencyWorkspace() {
     const next={state:entry?blankModel(entry.sourceProfile):structuredClone(DEFAULT_STATE),uiLanguage:entry?draftRef.current.uiLanguage:'en' as const,highResolution:false};
     draftRef.current=next;setDraft(next);dirty.current=true;await saveNow();setEditorVersion(version=>version+1);
   });
-  return {draft,ready,busy,saveStatus,editorVersion,workspace,entries,enabled,activeId,error,conflict,externalWorkspace,progress,updateDraft,toggle,switchModel,importModels,reloadLatest,exportZip,reset,clearError:()=>setError('')};
+  return {draft,ready,busy,switching,saveStatus,editorVersion,workspace,entries,enabled,activeId,error,conflict,externalWorkspace,progress,updateDraft,toggle,switchModel,importModels,reloadLatest,exportZip,reset,clearError:()=>setError('')};
 }

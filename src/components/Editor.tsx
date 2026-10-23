@@ -286,7 +286,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
   };
 
   return (
-    <div className="flex flex-col lg:flex-row w-full h-full absolute inset-0 overflow-hidden bg-white">
+    <div data-editor-busy={isExporting || !!editingImageId} className="flex flex-col lg:flex-row w-full h-full absolute inset-0 overflow-hidden bg-white">
       {isExporting && <div className="absolute inset-0 z-[80] bg-white/80 flex items-center justify-center gap-2 text-sm" role="status"><LoaderCircle size={18} className="animate-spin motion-reduce:animate-none" />{lang.exporting}</div>}
       {!isExporting && exportNotice && !exportResult && !instagramResult && <div role="status" className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[80] hidden lg:flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 shadow-sm text-xs pointer-events-none"><Check size={16} />{exportNotice}</div>}
       {/* Mobile Tabs */}
