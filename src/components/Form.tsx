@@ -8,6 +8,7 @@ import { X, Upload } from 'lucide-react';
 import WatermarkAppearanceControls from './WatermarkAppearanceControls';
 import LogoImage from './LogoImage';
 import WatermarkTypographyControls from './WatermarkTypographyControls';
+import SecondPageControls from './SecondPageControls';
 
 interface FormProps {
   state: AppState;
@@ -400,6 +401,8 @@ export default function Form({ state, setState, onImageClick, uiLanguage }: Form
             </div>
           </div>
         </section>
+
+        <SecondPageControls state={state} setState={setState} onImageClick={onImageClick} japanese={uiLanguage === 'ja'} />
 
         {/* Agency Logo / Watermark Section */}
         <section>

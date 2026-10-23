@@ -5,6 +5,8 @@ import { photoContext } from './photoCanvas';
 import { layoutInstagram } from './instagramLayout';
 import { applyCompositeTypography } from './compositeTypography';
 import { prepareLogo } from './logoImage';
+import { applyWatermarkLayout } from './watermarkLayout';
+import { layoutSecondPageInstagram } from './secondPageInstagram';
 
 async function preparePhoto(element: HTMLImageElement, state: AppState) {
   await element.decode();
@@ -53,7 +55,7 @@ async function preparePhoto(element: HTMLImageElement, state: AppState) {
   return result;
 }
 
-export async function renderComposite(element: HTMLElement, state: AppState, highResolution: boolean, format: 'pdf' | 'jpeg' = 'pdf', instagramSide?: 'left' | 'right') {
+export async function renderComposite(element: HTMLElement, state: AppState, highResolution: boolean, format: 'pdf' | 'jpeg' = 'pdf', instagramSide?: 'left' | 'right', referenceNameSize?: number) {
   await document.fonts.ready;
   const photos: string[] = [];
   for (const image of Array.from(element.querySelectorAll('img'))) {
@@ -79,7 +81,7 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
     scrollY: 0,
     logging: false,
     onclone: async (documentClone) => {
-      const target = documentClone.getElementById('composite-canvas')!;
+      const target = documentClone.getElementById(element.id)!;
       // Remove the preview scale and hidden mobile tab from the export layout.
       documentClone.body.replaceChildren(target);
       target.style.cssText += ';position:relative;transform:none;margin:0;box-shadow:none';
@@ -112,9 +114,20 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
         images[i].style.filter = 'none';
         await images[i].decode();
       }
-      if (instagramSide) layoutInstagram(target, state, instagramSide);
+      if (instagramSide) {
+        if (target.dataset.secondPage) layoutSecondPageInstagram(target, state, instagramSide, referenceNameSize);
+        else layoutInstagram(target, state, instagramSide);
+      }
       await documentClone.fonts.ready;
-      applyCompositeTypography(target, state, instagramSide);
+      if (!target.dataset.secondPage) applyCompositeTypography(target, state, instagramSide);
+      else applyWatermarkLayout(target, state, referenceNameSize ?? Number(target.dataset.watermarkNameSize || 52));
+      output.dataset.watermarkNameSize = target.dataset.watermarkNameSize || '52';
+      const watermarkText = state.watermark.type === 'text' ? target.querySelector<HTMLElement>('[data-composite="watermark"] > *') : null;
+      if (watermarkText) {
+        const style = documentClone.defaultView!.getComputedStyle(watermarkText);
+        const text = watermarkText.textContent || 'H';
+        await documentClone.fonts.load(`${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`, text);
+      }
       // html2canvas does not reliably honor object-fit; bake each visible frame.
       for (const image of Array.from(target.querySelectorAll('img'))) {
         const computed = documentClone.defaultView!.getComputedStyle(image);
@@ -144,7 +157,40 @@ export async function renderComposite(element: HTMLElement, state: AppState, hig
         frame.width = frame.height = 0;
       }
       await documentClone.fonts.ready;
-      if (!instagramSide && !(state.profile.nameAtBottom ?? true)) {
+      if (watermarkText) {
+        // Bake the stamp text so html2canvas's baseline measurement cannot vary by page.
+        const style = documentClone.defaultView!.getComputedStyle(watermarkText);
+        const width = watermarkText.offsetWidth, height = watermarkText.offsetHeight;
+        if (width && height) {
+          const stampCanvas = documentClone.createElement('canvas');
+          stampCanvas.width = Math.round(width * scale); stampCanvas.height = Math.round(height * scale);
+          const context = stampCanvas.getContext('2d')!;
+          context.scale(scale, scale);
+          const size = parseFloat(style.fontSize), leading = parseFloat(style.lineHeight);
+          context.font = `${style.fontStyle} ${style.fontWeight} ${size}px ${style.fontFamily}`;
+          context.fillStyle = style.color;
+          const text = watermarkText.textContent || '';
+          const metrics = context.measureText(text || 'H');
+          const ascent = metrics.fontBoundingBoxAscent ?? size * .8, descent = metrics.fontBoundingBoxDescent ?? size * .2;
+          const baseline = parseFloat(style.paddingTop) + (leading - ascent - descent) / 2 + ascent;
+          const spacing = parseFloat(style.letterSpacing) || 0;
+          if (Reflect.has(context, 'letterSpacing')) {
+            context.letterSpacing = `${spacing}px`;
+            context.textAlign = 'right';
+            context.fillText(text, width - parseFloat(style.paddingRight), baseline);
+          } else {
+            const characters = Array.from(text);
+            const advances = characters.map(character => context.measureText(character).width + spacing);
+            let x = width - parseFloat(style.paddingRight) - advances.reduce((sum, advance) => sum + advance, 0);
+            characters.forEach((character, index) => { context.fillText(character, x, baseline); x += advances[index]; });
+          }
+          const image = documentClone.createElement('img'); image.src = stampCanvas.toDataURL('image/png');
+          image.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+          Object.assign(watermarkText.style, { position: 'relative', width: `${width}px`, height: `${height}px`, padding: '0' });
+          watermarkText.replaceChildren(image); await image.decode();
+        }
+      }
+      if (!target.dataset.secondPage && !instagramSide && !(state.profile.nameAtBottom ?? true)) {
         const name = target.querySelector<HTMLElement>('[data-composite="name"]');
         if (name) {
           // Rasterize this optically aligned title to avoid html2canvas baseline drift.

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { AppState } from '../types';
 import Form from './Form';
 import Preview from './Preview';
+import SecondPagePreview from './SecondPagePreview';
 import jsPDF from 'jspdf';
 import { renderComposite } from '../exportComposite';
 import { frameWholeComposite } from '../instagramWhole';
@@ -67,7 +68,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
     : { saving: 'Saving locally...', saved: 'Saved on this device', unavailable: 'Local save unavailable' }[visibleSaveStatus];
   const [exportResult, setExportResult] = useState<{ file: File; url: string; format: 'pdf' | 'jpeg' } | null>(null);
   const [showPreviewOptions, setShowPreviewOptions] = useState(false);
-  const [instagramResult, setInstagramResult] = useState<{ file: File; url: string; side: 'left' | 'right' | 'whole' }[] | null>(null);
+  const [instagramResult, setInstagramResult] = useState<{ file: File; url: string; side: 'left' | 'right' | 'whole' | 'page1' | 'page2'; pageNumber?: number }[] | null>(null);
   useEffect(() => () => {
     instagramResult?.forEach(result => URL.revokeObjectURL(result.url));
   }, [instagramResult]);
@@ -176,6 +177,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
     exportBusy.current = true;
     setExportNotice('');
     setIsExporting(true);
+    const pageResults: NonNullable<typeof instagramResult> = [];
     
       try {
         const canvasElement = document.getElementById('composite-canvas');
@@ -183,20 +185,35 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
           throw new Error('Export canvas not found');
         }
 
-        const canvas = await renderComposite(canvasElement, state, highResolution, format);
-        const imgData = canvas.toDataURL('image/jpeg', highResolution ? 1 : .95);
-        canvas.width = canvas.height = 0;
+        const pages = [canvasElement];
+        if (state.secondPageEnabled) {
+          const second = document.getElementById('composite-canvas-page2');
+          if (!second) throw new Error('Second page unavailable');
+          pages.push(second);
+        }
+        const pdf = format === 'pdf' ? new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }) : null;
+        let imgData = '';
+        for (const [index, page] of pages.entries()) {
+          const canvas = await renderComposite(page, state, highResolution, format);
+          try { imgData = canvas.toDataURL('image/jpeg', highResolution ? 1 : .95); }
+          finally { canvas.width = canvas.height = 0; }
+          if (pdf) {
+            if (index) pdf.addPage('a4', 'landscape');
+            pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+          } else if (pages.length > 1) {
+            const blob = await (await fetch(imgData)).blob();
+            const file = new File([blob], `${state.profile.name || 'composite'}_zedcard_${index + 1}.jpg`, { type: blob.type });
+            pageResults.push({ file, url: URL.createObjectURL(file), side: index ? 'page2' : 'page1' });
+          }
+        }
+        if (pageResults.length) {
+          setShareError('');
+          setInstagramResult(pageResults);
+          return;
+        }
         let blob: Blob;
 
-        if (format === 'pdf') {
-          // A4 landscape = 297mm x 210mm
-          const pdf = new jsPDF({
-            orientation: 'landscape',
-            unit: 'mm',
-            format: 'a4'
-          });
-          
-          pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+        if (pdf) {
           blob = pdf.output('blob');
         } else {
           blob = await (await fetch(imgData)).blob();
@@ -215,6 +232,7 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
         }
         setExportNotice(uiLanguage === 'ja' ? '書き出し完了' : 'Export ready');
       } catch (error: any) {
+        pageResults.forEach(result => URL.revokeObjectURL(result.url));
         console.error('Export failed:', error);
         alert(`${uiLanguage === 'ja' ? '出力できませんでした' : 'Export failed'}: ${error?.message || String(error)}`);
       } finally {
@@ -233,15 +251,25 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
     try {
       const element = document.getElementById('composite-canvas');
       if (!element) throw new Error('Preview unavailable');
-      for (const side of (mode === 'whole' ? ['whole'] : ['left', 'right']) as ('left' | 'right' | 'whole')[]) {
-        const source = await renderComposite(element, state, false, 'jpeg', side === 'whole' ? undefined : side);
+      const pages = [element];
+      if (state.secondPageEnabled) {
+        const second = document.getElementById('composite-canvas-page2');
+        if (!second) throw new Error('Second page unavailable');
+        pages.push(second);
+      }
+      const referenceSizes = new Map<string, number>();
+      for (const [pageIndex, page] of pages.entries()) {
+       for (const side of (mode === 'whole' ? ['whole'] : ['left', 'right']) as ('left' | 'right' | 'whole')[]) {
+        const source = await renderComposite(page, state, false, 'jpeg', side === 'whole' ? undefined : side, referenceSizes.get(side));
+        if (pageIndex === 0) referenceSizes.set(side, Number(source.dataset.watermarkNameSize));
         const canvas = side === 'whole' ? frameWholeComposite(source, state.instagram?.margin) : source;
         if (canvas !== source) source.width = source.height = 0;
         try {
           const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Image export failed')), 'image/jpeg', .97));
-          const file = new File([blob], `${state.profile.name || 'composite'}_instagram_${side}.jpg`, { type: 'image/jpeg' });
-          results.push({ file, url: URL.createObjectURL(file), side });
+          const file = new File([blob], `${state.profile.name || 'composite'}_instagram_${pages.length > 1 ? `${pageIndex + 1}_` : ''}${side}.jpg`, { type: 'image/jpeg' });
+          results.push({ file, url: URL.createObjectURL(file), side, pageNumber: pages.length > 1 ? pageIndex + 1 : undefined });
         } finally { canvas.width = canvas.height = 0; }
+       }
       }
       setShareError('');
       setInstagramResult(results);
@@ -354,8 +382,9 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
         </header>
         {showPreviewOptions && <PreviewOptions session={optionsSession} state={state} setState={setState} language={uiLanguage} onClose={() => setShowPreviewOptions(false)} onInstagram={performInstagramExport} exporting={isExporting} />}
 
-        <div className="flex-1 min-h-0 flex items-center justify-center p-2 lg:p-12 overflow-hidden relative">
-          <Preview state={state} onImageClick={handleImageClick} />
+        <div className={`flex-1 min-h-0 p-2 lg:p-12 overflow-hidden relative ${state.secondPageEnabled ? 'grid grid-rows-2 min-[1500px]:grid-rows-1 min-[1500px]:grid-cols-2 gap-3' : 'flex items-center justify-center'}`}>
+          <div className="w-full h-full min-h-0 min-w-0"><Preview state={state} onImageClick={handleImageClick} /></div>
+          {state.secondPageEnabled && <div className="w-full h-full min-h-0 min-w-0"><SecondPagePreview state={state} onImageClick={handleImageClick} /></div>}
         </div>
         
         <footer className="h-8 bg-black text-white hidden md:flex items-center px-6 text-[9px] uppercase tracking-widest shrink-0 relative z-10">
@@ -427,10 +456,10 @@ export default function Editor({ state, setState, uiLanguage, setUiLanguage, hig
 
       {instagramResult && <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
         <section role="dialog" aria-modal="true" aria-labelledby="instagram-title" className="bg-white rounded-lg p-5 w-full max-w-2xl max-h-[90dvh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-3"><h2 id="instagram-title" className="font-bold">Instagram · 1080 × 1350</h2><button onClick={() => setInstagramResult(null)} aria-label={uiLanguage === 'ja' ? '閉じる' : 'Close'} className="p-2"><X size={20} /></button></div>
-          <div className={instagramResult.length === 1 ? 'max-w-sm mx-auto' : 'grid grid-cols-2 gap-3'}>{instagramResult.map(result => <div key={result.side} className="min-w-0">
-            <p className="text-xs text-gray-500 mb-2">{result.side === 'whole' ? (uiLanguage === 'ja' ? '全体' : 'Whole composite') : result.side === 'left' ? (uiLanguage === 'ja' ? '1 · 左側' : '1 · Left') : (uiLanguage === 'ja' ? '2 · 右側' : '2 · Right')}</p>
-            <img src={result.url} alt={`Instagram ${result.side}`} className="w-full border border-gray-100" />
+          <div className="flex justify-between items-center mb-3"><h2 id="instagram-title" className="font-bold">{instagramResult[0]?.side.startsWith('page') ? (uiLanguage === 'ja' ? 'JPEG · 2枚' : 'JPEG · 2 pages') : 'Instagram · 1080 × 1350'}</h2><button onClick={() => setInstagramResult(null)} aria-label={uiLanguage === 'ja' ? '閉じる' : 'Close'} className="p-2"><X size={20} /></button></div>
+          <div className={instagramResult.length === 1 ? 'max-w-sm mx-auto' : 'grid grid-cols-2 gap-3'}>{instagramResult.map(result => <div key={`${result.pageNumber ?? ''}-${result.side}`} className="min-w-0">
+            <p className="text-xs text-gray-500 mb-2">{result.pageNumber ? (uiLanguage === 'ja' ? `${result.pageNumber}枚目 · ` : `Page ${result.pageNumber} · `) : ''}{result.side.startsWith('page') ? (uiLanguage === 'ja' ? `${result.side.slice(-1)}枚目` : `Page ${result.side.slice(-1)}`) : result.side === 'whole' ? (uiLanguage === 'ja' ? '全体' : 'Whole composite') : result.side === 'left' ? (uiLanguage === 'ja' ? '1 · 左側' : '1 · Left') : (uiLanguage === 'ja' ? '2 · 右側' : '2 · Right')}</p>
+            <img src={result.url} alt={`${result.side.startsWith('page') ? 'Composite' : 'Instagram'} ${result.pageNumber ? `${result.pageNumber} ` : ''}${result.side}`} className="w-full border border-gray-100" />
             {navigator.canShare?.({ files: [result.file] }) && <button onClick={() => shareInstagram(result.file)} className="w-full text-xs py-3 flex items-center justify-center gap-2 mt-2 bg-black text-white"><Share2 size={16} />{uiLanguage === 'ja' ? '共有して保存' : 'Share and save'}</button>}
             <a href={result.url} download={result.file.name} className="w-full text-xs py-3 flex items-center justify-center gap-2 mt-2 border border-gray-300"><Download size={16} />{uiLanguage === 'ja' ? 'ダウンロード' : 'Download'}</a>
           </div>)}</div>

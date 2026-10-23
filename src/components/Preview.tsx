@@ -2,10 +2,10 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppState } from '../types';
 import { getImageFilter } from '../imageAdjustments';
 import ImageAdjustmentFilter from './ImageAdjustmentFilter';
-import { getNameTypography, NAME_FONTS } from '../nameTypography';
+import { getNameTypography } from '../nameTypography';
 import { getCompositeLayout } from '../compositeLayout';
 import { applyCompositeTypography } from '../compositeTypography';
-import LogoImage from './LogoImage';
+import CompositeWatermark from './CompositeWatermark';
 
 interface PreviewProps {
   state: AppState;
@@ -17,9 +17,6 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const [scale, setScale] = useState(1);
   const A4_WIDTH = 1123;
   const A4_HEIGHT = 794;
-  const WATERMARK_BOX_WIDTH = 160;
-  const WATERMARK_BOX_HEIGHT = 32;
-  const WATERMARK_MIN_HEIGHT = 32 * 40 / 140;
 
   useEffect(() => {
     const updateScale = () => {
@@ -55,7 +52,6 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
   const detailLength = [profile.hair, profile.eyes, profile.showNationality ? profile.nationality : '', profile.showResidence ? profile.residence : '', ...(profile.showExperience ? [profile.experience, profile.experience2, profile.experience3, profile.experience4] : [])].join(' ').length;
   const layout = getCompositeLayout(state.compositeMargin, detailLength);
   const nameAtBottom = profile.nameAtBottom ?? true;
-  const watermarkFont = NAME_FONTS.find(font => font.family === state.watermark.font) || NAME_FONTS[0];
   const layoutStyle: React.CSSProperties = {
     position: 'absolute', zIndex: 1, width: layout.width, height: A4_HEIGHT - layout.margin * 2,
     left: (A4_WIDTH - layout.width) / 2, top: layout.margin,
@@ -89,11 +85,6 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
     if (containerRef.current) observer.observe(containerRef.current);
     return () => { active = false; cancelAnimationFrame(fitFrame); observer.disconnect(); document.fonts.removeEventListener('loadingdone', fitAfterLayout); };
   }, [state, scale]);
-  const watermarkSize = state.watermark.size ?? 100;
-  const watermarkScale = Math.min(Math.max(watermarkSize, 40), 140);
-  const watermarkRatio = (watermarkScale - 40) / 100;
-  const watermarkHeight = WATERMARK_MIN_HEIGHT + watermarkRatio * (WATERMARK_BOX_HEIGHT - WATERMARK_MIN_HEIGHT);
-  const watermarkTextSize = Math.min(38, Math.max(16, state.watermark.textSize ?? 31));
 
   const MainImagePlaceholder = () => (
     <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 font-sans text-sm">
@@ -184,7 +175,7 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
             position: 'relative'
           }}
         >
-          {Object.values(images).map((image) => (
+          {Object.values(images).filter(image => !image.id.startsWith('page2-')).map((image) => (
             <ImageAdjustmentFilter
               key={`preview-filter-${image.id}`}
               id={`preview-image-adjustment-${image.id}`}
@@ -362,54 +353,10 @@ export default function Preview({ state, onImageClick }: PreviewProps) {
           </div>
           )}
 
-          {state.watermark.enabled && (
-            <div 
-              data-composite="watermark" className={`absolute pointer-events-none z-0 flex items-end justify-end ${state.watermark.type === 'image' ? 'overflow-hidden' : ''}`}
-              style={{
-                opacity: state.watermark.opacity / 100,
-                right: 12,
-                bottom: 4,
-                maxWidth: 240,
-                maxHeight: state.watermark.type === 'image' ? WATERMARK_BOX_HEIGHT : 44,
-                overflow: state.watermark.type === 'image' ? 'hidden' : 'visible',
-                width: state.watermark.type === 'image' ? WATERMARK_BOX_WIDTH : undefined,
-                height: state.watermark.type === 'image' ? WATERMARK_BOX_HEIGHT : 44,
-              }}
-            >
-              {state.watermark.type === 'text' && state.watermark.text && (
-                <div 
-                  style={{ 
-                    fontFamily: watermarkFont.family,
-                    fontWeight: watermarkFont.weight,
-                    letterSpacing: `${state.watermark.textSpacing ?? watermarkFont.spacing}em`,
-                    fontSize: `${watermarkTextSize}px`,
-                    lineHeight: 1.2,
-                    padding: '2px 4px',
-                    overflowWrap: 'anywhere',
-                  }}
-                  className={`text-black text-right ${state.watermark.textItalic ? 'italic' : ''}`}
-                >
-                  {state.watermark.text}
-                </div>
-              )}
-              {state.watermark.type === 'image' && state.watermark.imageUrl && (
-                <LogoImage
-                  src={state.watermark.imageUrl} 
-                  onLoad={() => {
-                    const root = containerRef.current?.querySelector<HTMLElement>('#composite-canvas');
-                    if (root) applyCompositeTypography(root, state);
-                  }}
-                  alt="Agency Logo" 
-                  className="block w-auto object-contain object-right-bottom"
-                  style={{
-                    height: watermarkHeight,
-                    maxWidth: WATERMARK_BOX_WIDTH,
-                    maxHeight: WATERMARK_BOX_HEIGHT,
-                  }}
-                />
-              )}
-            </div>
-          )}
+          <CompositeWatermark state={state} onLoad={() => {
+            const root = containerRef.current?.querySelector<HTMLElement>('#composite-canvas');
+            if (root) applyCompositeTypography(root, state);
+          }} />
         </div>
       </div>
     </div>

@@ -56,11 +56,13 @@ export interface WatermarkData {
 }
 
 export interface AppState {
+  secondPageEnabled?: boolean;
   compositeMargin?: number;
   instagram?: { margin: number; gap: number };
   profile: ProfileData;
   watermark: WatermarkData;
   images: {
+    [key: string]: ImageData;
     main: ImageData;
     sub1: ImageData;
     sub2: ImageData;
